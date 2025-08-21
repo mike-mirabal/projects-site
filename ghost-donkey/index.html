@@ -69,6 +69,11 @@
       }
     }
 
+    // Show first message when page loads
+    window.addEventListener('DOMContentLoaded', () => {
+    appendMsg('ai', "Hi, I'm the Ghost Donkey Trainer! 🍸 Ask me about our cocktails anytime.");
+    });
+
     // send on Enter
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') send();
