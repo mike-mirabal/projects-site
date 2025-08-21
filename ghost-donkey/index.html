@@ -20,7 +20,7 @@
   <div id="chat" class="chat"></div>
   <div class="row">
     <input id="input" type="text" placeholder="Ask about the menu..." />
-    <button onclick="send()">Send</button>
+    <button id="sendBtn" onclick="send()">Send</button>
   </div>
 
   <script>
@@ -40,21 +40,31 @@
       if (!text) return;
       appendMsg('user', text);
       input.value = "";
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: text })
+        });
+
+        if (!res.ok) {
+          const t = await res.text().catch(()=> '');
+          appendMsg('ai', `API error ${res.status}: ${t.slice(0,180)}`);
+          return;
+        }
+
+        const data = await res.json();
+        appendMsg('ai', data.answer || 'No answer.');
+      } catch (err) {
+        appendMsg('ai', 'Network error contacting assistant.');
+      }
     }
 
-      const res = await fetch('/api/chat', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ query: text })
-});
-if (!res.ok) {
-  const t = await res.text().catch(()=> '');
-  appendMsg('ai', `API error ${res.status}: ${t.slice(0,180)}`);
-  return;
-}
-const data = await res.json();
-appendMsg('ai', data.answer || 'No answer.');
-
+    // optional: send on Enter key
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') send();
+    });
   </script>
 </body>
 </html>
