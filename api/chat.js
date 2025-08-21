@@ -1,21 +1,61 @@
 // /api/chat.js
 export default async function handler(req, res) {
   try {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     const { query } = req.body || {};
-    if (!query) {
-      return res.status(400).json({ error: 'Missing query' });
+    if (!query) return res.status(400).json({ error: 'Missing query' });
+
+    // Load & parse your menu data
+    let menu = {};
+    try { menu = JSON.parse(process.env.MENU_JSON || '{}'); } catch { menu = {}; }
+
+    // Find a matching item by name (ignores things in parentheses like "(frozen)")
+    const q = String(query).toLowerCase();
+    const normalize = s => s.toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim();
+    const keys = Object.keys(menu);
+    let matchKey =
+      keys.find(k => q.includes(normalize(k))) ||
+      keys.find(k => normalize(k).includes(q));
+
+    if (matchKey) {
+      const item = menu[matchKey] || {};
+      // Prefer "build" array; fall back to "recipe" array/string
+      const buildArr = Array.isArray(item.build) ? item.build :
+                       Array.isArray(item.recipe) ? item.recipe :
+                       (typeof item.recipe === 'string' ? [item.recipe] : []);
+
+      // Bubble 1: formatted spec
+      const lines = [
+        `**${matchKey}**`,
+        ...buildArr.map(x => `• ${x}`),
+        item.glass ? `Glass: ${item.glass}` : null,
+        item.garnish ? `Garnish: ${item.garnish}` : null
+      ].filter(Boolean);
+
+      // Bubble 2: follow‑up
+      const follow = `Would you like to know more about this cocktail or its ingredients?`;
+
+      return res.status(200).json({ bubbles: [lines.join('\n'), follow] });
     }
 
+    // Fallback to LLM when we don't detect a direct match
     const systemPrompt = `
-You are Ghost Donkey Trainer. You answer staff questions about the bar's menu with precise, current specs.
-- Be concise and operationally useful (steps, measures, glassware, garnish).
-- Include allergen flags and ingredient substitutions if relevant.
-- If info is missing, say so and suggest checking the spec sheet.
-Knowledge Base (JSON):
+You are Ghost Donkey Trainer. Follow this EXACT response shape:
+- Always produce 1–2 short "chat bubbles" (strings), returned as JSON { "bubbles": [ ... ] }.
+- Bubble 1 must contain:
+  Cocktail Name (in bold like **Name**)
+  bullet points for ingredients/spec (one per line, each starting with "• ")
+  Glass: <type>
+  Garnish: <garnish>
+- Bubble 2 must be the follow-up question:
+  "Would you like to know more about this cocktail or its ingredients?"
+
+Rules:
+- Keep responses brief and operational.
+- If data is missing in the knowledge, say what’s missing (briefly) and suggest checking the spec sheet.
+- NEVER print the full knowledge base JSON verbatim.
+Knowledge base (for your internal reference):
 ${process.env.MENU_JSON || "{}"}
 `.trim();
 
@@ -30,9 +70,9 @@ ${process.env.MENU_JSON || "{}"}
         temperature: 0.2,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: query },
-        ],
-      }),
+          { role: 'user', content: query }
+        ]
+      })
     });
 
     if (!r.ok) {
@@ -41,8 +81,23 @@ ${process.env.MENU_JSON || "{}"}
     }
 
     const data = await r.json();
-    const answer = data?.choices?.[0]?.message?.content || 'No answer.';
-    return res.status(200).json({ answer });
+    // Try to read a bubbles array if the model followed instructions
+    const content = data?.choices?.[0]?.message?.content || '';
+    // Basic parse attempt: expect something like a JSON code block or raw JSON
+    let bubbles;
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(parsed.bubbles)) bubbles = parsed.bubbles;
+      }
+    } catch {}
+    // Fallback: treat content as one bubble + our standard follow-up
+    if (!bubbles) {
+      bubbles = [content.trim(), 'Would you like to know more about this cocktail or its ingredients?'];
+    }
+
+    return res.status(200).json({ bubbles });
   } catch (e) {
     return res.status(500).json({ error: 'Server error', detail: String(e).slice(0, 400) });
   }

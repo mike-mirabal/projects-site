@@ -7,7 +7,7 @@
   <style>
     body { font-family: sans-serif; max-width: 700px; margin: 20px auto; padding: 0 20px; }
     .chat { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; margin-bottom: 10px; }
-    .msg { margin: 5px 0; }
+    .msg { margin: 5px 0; white-space: pre-wrap; }
     .user { font-weight: bold; }
     .ai { color: #444; }
     input, button { padding: 10px; font-size: 1rem; }
@@ -35,6 +35,10 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
+    function appendAiBubbles(bubbles) {
+      for (const b of bubbles) appendMsg('ai', b);
+    }
+
     async function send() {
       const text = input.value.trim();
       if (!text) return;
@@ -55,13 +59,17 @@
         }
 
         const data = await res.json();
-        appendMsg('ai', data.answer || 'No answer.');
+        if (Array.isArray(data.bubbles)) {
+          appendAiBubbles(data.bubbles);
+        } else {
+          appendMsg('ai', data.answer || 'No answer.');
+        }
       } catch (err) {
         appendMsg('ai', 'Network error contacting assistant.');
       }
     }
 
-    // optional: send on Enter key
+    // send on Enter
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') send();
     });
