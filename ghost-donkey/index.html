@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ghost Donkey Trainer</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: 20px auto; padding: 0 20px; }
+    .chat { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; margin-bottom: 10px; }
+    .msg { margin: 5px 0; }
+    .user { font-weight: bold; }
+    .ai { color: #444; }
+    input, button { padding: 10px; font-size: 1rem; }
+    .row { display: flex; gap: 10px; }
+    .row input { flex: 1; }
+  </style>
+</head>
+<body>
+  <h1>Ghost Donkey Trainer</h1>
+  <div id="chat" class="chat"></div>
+  <div class="row">
+    <input id="input" type="text" placeholder="Ask about the menu..." />
+    <button onclick="send()">Send</button>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById('chat');
+    const input = document.getElementById('input');
+
+    function appendMsg(role, text) {
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      div.textContent = (role === 'user' ? "You: " : "AI: ") + text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function send() {
+      const text = input.value.trim();
+      if (!text) return;
+      appendMsg('user', text);
+      input.value = "";
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: text })
+      });
+      const data = await res.json();
+      appendMsg('ai', data.answer || "No answer.");
+    }
+  </script>
+</body>
+</html>
