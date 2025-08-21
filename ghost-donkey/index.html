@@ -40,15 +40,21 @@
       if (!text) return;
       appendMsg('user', text);
       input.value = "";
+    }
 
       const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: text })
-      });
-      const data = await res.json();
-      appendMsg('ai', data.answer || "No answer.");
-    }
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ query: text })
+});
+if (!res.ok) {
+  const t = await res.text().catch(()=> '');
+  appendMsg('ai', `API error ${res.status}: ${t.slice(0,180)}`);
+  return;
+}
+const data = await res.json();
+appendMsg('ai', data.answer || 'No answer.');
+
   </script>
 </body>
 </html>
