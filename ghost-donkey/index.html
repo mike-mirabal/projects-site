@@ -3,81 +3,328 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ghost Donkey Trainer</title>
+  <title>GHOST DONKEY Spirit Guide</title>
   <style>
-    body { font-family: sans-serif; max-width: 700px; margin: 20px auto; padding: 0 20px; }
-    .chat { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; margin-bottom: 10px; }
-    .msg { margin: 5px 0; white-space: pre-wrap; }
-    .user { font-weight: bold; }
-    .ai { color: #444; }
-    input, button { padding: 10px; font-size: 1rem; }
-    .row { display: flex; gap: 10px; }
-    .row input { flex: 1; }
+    :root{
+      --bg:#f9e7e7;
+      --accent:#ee4d36;
+      --teal:#55c4bb;
+      --text:#09080a;
+      --muted:#f3d9d9;
+      --maxw:1100px;
+      --border:2px;
+      --radius:0; /* square everything */
+    }
+    /* Page scaffold (no page scroll; only chat scrolls) */
+    html,body{height:100%; margin:0; padding:0; background:var(--bg); color:var(--text); overflow:hidden;}
+    body{font-family:"Futura PT", Futura, "Avenir Next", Avenir, Arial, sans-serif;}
+
+    .app{
+      height:100%;
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding-inline: clamp(16px, 4vw, 40px);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      box-sizing:border-box;
+    }
+
+    /* Top bar */
+    .topbar{
+      flex:0 0 auto;
+      display:grid;
+      grid-template-columns: 1fr auto;
+      align-items:center;
+      gap:12px;
+      padding:10px 0 2px;
+    }
+    .brand{
+      font-size: 1.75rem;
+      line-height:1.05;
+      margin:0;
+      font-weight:700;
+      letter-spacing:.3px;
+      display:flex;
+      gap:10px;
+      align-items:baseline;
+      flex-wrap:wrap;
+    }
+
+      /* Styles for screens 768px and wider (e.g., tablets and desktops) */
+    @media screen and (max-width: 768px) {
+        .brand {
+            font-size: 1.2rem;
+        }
+    }
+    .brand .gd{
+      font-weight:900;
+      color:var(--teal);
+      text-shadow:
+        2px 0 var(--accent),
+        -2px 0 var(--accent),
+        0 2px var(--accent),
+        0 -2px var(--accent);
+    }
+    .brand .sg{
+      color:var(--accent);
+      font-weight:600;
+    }
+    /* stack title on small screens while keeping toggle on the right */
+    @media (max-width:560px){
+      .brand{display:block;}
+      .brand .line{display:block}
+    }
+
+    /* Toggle */
+    .toggle{
+      display:inline-flex;
+      border:var(--border) solid var(--accent);
+      border-radius:999px;
+      padding:3px;
+      gap:4px;
+      background:transparent;
+    }
+    .toggle button{
+      all:unset;
+      padding:8px 12px;
+      font-size: 0.75rem;
+      font-weight:700;
+      border-radius:999px;
+      cursor:pointer;
+      color:var(--text);
+    }
+ /* scale down toggle on mobile */
+    @media (max-width:560px){
+      .toggle button{
+      all:unset;
+      padding:6px 8px;
+      font-size: 0.5rem;
+      font-weight:700;
+      border-radius:999px;
+    }}
+    
+    .toggle .on{
+      background:var(--teal);
+      color:#fff;
+    }
+    .toggle .off{
+      background:transparent;
+      color:var(--accent);
+    }
+
+    /* Floral divider */
+    .divider{
+      flex:0 0 auto;
+      display:block;
+      width:100%;
+      height:auto;
+      margin:6px 0 6px;
+      object-fit:contain;
+    }
+
+    /* Chat panel (“modal”) */
+    .panel{
+      flex:1 1 auto;
+      min-height:0;           /* allows inner scroll */
+      border:var(--border) solid var(--accent);
+      background:var(--muted);
+      padding: clamp(14px, 2vw, 20px);
+      overflow:hidden;        /* hide scrollbars of wrapper */
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      margin-bottom: 1rem;
+    }
+    .scroll{
+      flex:1 1 auto;
+      min-height:0;
+      overflow-y:auto;
+      padding-right:4px;      /* tiny room for scrollbar */
+    }
+
+    /* Messages */
+    .msg{margin:10px 0; font-size:clamp(15px, 1.15vw, 18px); line-height:1;}
+    .msg.ai{ /* plain text, no bubble */ }
+    .msg.user{
+      padding:8px;
+      border-bottom:var(--border) solid var(--accent);
+      border-radius:var(--radius);
+      margin-left:auto;
+      max-width:min(720px, 90%);
+    }
+
+    .accent-teal{ color:var(--teal); font-weight:800; }
+
+    /* Input row */
+    .inputbar{
+      flex:0 0 auto;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-top:8px;
+    }
+    .inputbar .field{
+      flex:1 1 auto; min-width:0; /* prevents wrap */
+      display:flex; align-items:center; gap:10px;
+      border:var(--border) solid var(--accent);
+      background:var(--bg);
+      padding:8px 10px;
+      border-radius:var(--radius);
+    }
+    .field input{
+      all:unset;
+      flex:1 1 auto; min-width:0;
+      font-size:clamp(15px, 1.1vw, 17px);
+      line-height:1.2;
+      color:var(--text);
+    }
+    .send{
+      flex:0 0 auto;
+      height:42px; width:46px;
+      border:var(--border) solid var(--accent);
+      background:var(--accent);
+      color:#fff;
+      border-radius:var(--radius);
+      cursor:pointer;
+      display:grid; place-items:center;
+      font-size:18px; font-weight:900;
+    }
+    .send:disabled{ opacity:.55; cursor:not-allowed; }
+
+    .hint{
+      font-size:clamp(12px, .95vw, 14px);
+      margin-top:6px;
+      opacity:.95;
+    }
+    .hint .b{ color:var(--teal); font-weight:800; }
+    .hint .a{ color:var(--accent); font-weight:800; }
+
+    /* Desktop horizontal breathing */
+    @media (min-width:1100px){
+      .app{padding-inline: 56px;}
+    }
   </style>
 </head>
 <body>
-  <h1>Ghost Donkey Trainer</h1>
-  <div id="chat" class="chat"></div>
-  <div class="row">
-    <input id="input" type="text" placeholder="Ask about the menu..." />
-    <button id="sendBtn" onclick="send()">Send</button>
+  <div class="app">
+    <!-- Top bar -->
+    <div class="topbar">
+      <h1 class="brand" aria-label="GHOST DONKEY Spirit Guide">
+        <span class="line gd">GHOST DONKEY</span>
+        <span class="line sg">Spirit Guide</span>
+      </h1>
+      <div class="toggle" role="tablist" aria-label="Mode">
+        <button id="guestBtn" class="on" role="tab" aria-selected="true">Guest</button>
+        <button id="staffBtn" class="off" role="tab" aria-selected="false">Staff</button>
+      </div>
+    </div>
+
+    <!-- Floral divider -->
+    <img class="divider" src="GD_FloralDivider.webp" alt="" />
+
+    <!-- Chat “modal” -->
+    <section class="panel" aria-label="Chat">
+      <div id="chat" class="scroll" aria-live="polite" aria-relevant="additions"></div>
+
+      <!-- Input row -->
+      <div class="inputbar">
+        <div class="field">
+          <input id="input" type="text" placeholder="Ask about cocktails, allergens, glassware…" />
+        </div>
+        <button id="send" class="send" title="Send" aria-label="Send">➤</button>
+      </div>
+
+      <div class="hint">
+        <span class="b">Staff</span> shows builds & specs • <span class="a">Guest</span> is menu & ordering.
+      </div>
+    </section>
   </div>
 
   <script>
-    const chatBox = document.getElementById('chat');
-    const input = document.getElementById('input');
+    // Elements
+    const chatEl = document.getElementById('chat');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const guestBtn = document.getElementById('guestBtn');
+    const staffBtn = document.getElementById('staffBtn');
 
-    function appendMsg(role, text) {
+    let mode = 'guest'; // 'guest' | 'staff'
+
+    function appendAI(text){
       const div = document.createElement('div');
-      div.className = `msg ${role}`;
-      div.textContent = (role === 'user' ? "You: " : "AI: ") + text;
-      chatBox.appendChild(div);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      div.className = 'msg ai';
+      // simple accenting for cocktail names if wrapped in ** ** on server side
+      div.innerHTML = text
+        .replace(/\*\*(.+?)\*\*/g, '<span class="accent-teal">$1</span>');
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+    function appendUser(text){
+      const div = document.createElement('div');
+      div.className = 'msg user';
+      div.textContent = text;
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
     }
 
-    function appendAiBubbles(bubbles) {
-      for (const b of bubbles) appendMsg('ai', b);
+    function setMode(next){
+      mode = next;
+      const isGuest = mode === 'guest';
+      guestBtn.className = isGuest ? 'on' : 'off';
+      staffBtn.className = !isGuest ? 'on' : 'off';
+      guestBtn.setAttribute('aria-selected', isGuest);
+      staffBtn.setAttribute('aria-selected', !isGuest);
+      // Update greeting
+      chatEl.innerHTML = '';
+      appendAI(
+        `Hi, I’m the <span class="accent-teal">Ghost Donkey</span> Spirit Guide! 🍸<br><br>` +
+        (isGuest
+          ? `Guest mode is ON. Ask about cocktails—switch to <span class="accent-teal">Staff</span> for builds/specs.`
+          : `Staff mode is ON. Ask for cocktail builds, specs, glassware, and garnish.`)
+      );
     }
 
-    async function send() {
-      const text = input.value.trim();
-      if (!text) return;
-      appendMsg('user', text);
-      input.value = "";
+    guestBtn.onclick = () => setMode('guest');
+    staffBtn.onclick = () => setMode('staff');
 
-      try {
+    async function send(){
+      const text = (inputEl.value || '').trim();
+      if(!text) return;
+      appendUser(text);
+      inputEl.value = '';
+      sendBtn.disabled = true;
+      try{
         const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: text })
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ query: text, mode })
         });
-
-        if (!res.ok) {
+        if(!res.ok){
           const t = await res.text().catch(()=> '');
-          appendMsg('ai', `API error ${res.status}: ${t.slice(0,180)}`);
+          appendAI(`A server error occurred (${res.status}).`);
+          console.error('API error', res.status, t);
           return;
         }
-
         const data = await res.json();
-        if (Array.isArray(data.bubbles)) {
-          appendAiBubbles(data.bubbles);
-        } else {
-          appendMsg('ai', data.answer || 'No answer.');
-        }
-      } catch (err) {
-        appendMsg('ai', 'Network error contacting assistant.');
+        appendAI(data.answer || 'No answer.');
+      }catch(err){
+        console.error(err);
+        appendAI('Network error. Try again.');
+      }finally{
+        sendBtn.disabled = false;
+        inputEl.focus();
       }
     }
 
-    // Show first message when page loads
-    window.addEventListener('DOMContentLoaded', () => {
-    appendMsg('ai', "Hi, I'm the Ghost Donkey Trainer! 🍸 Ask me about our cocktails anytime.");
+    // UX: Enter = send
+    inputEl.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ e.preventDefault(); send(); }
     });
+    sendBtn.addEventListener('click', send);
 
-    // send on Enter
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') send();
-    });
+    // First load
+    setMode('guest');
   </script>
 </body>
 </html>

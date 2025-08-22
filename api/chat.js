@@ -3,60 +3,79 @@ export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    const { query } = req.body || {};
+    const { query, mode = 'guest' } = req.body || {};
     if (!query) return res.status(400).json({ error: 'Missing query' });
 
-    // Load & parse your menu data
+    // Load & parse menu JSON
     let menu = {};
     try { menu = JSON.parse(process.env.MENU_JSON || '{}'); } catch { menu = {}; }
 
-    // Find a matching item by name (ignores things in parentheses like "(frozen)")
     const q = String(query).toLowerCase();
     const normalize = s => s.toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim();
     const keys = Object.keys(menu);
+
     let matchKey =
       keys.find(k => q.includes(normalize(k))) ||
       keys.find(k => normalize(k).includes(q));
 
+    // Helper: format bubbles for staff vs guest
+    const bubblesForItem = (name, item, mode) => {
+      const ingredients = Array.isArray(item.ingredients) ? item.ingredients : null;
+      const buildArr = Array.isArray(item.build) ? item.build :
+                       Array.isArray(item.build?.singleBuild) ? item.build.singleBuild :
+                       Array.isArray(item.recipe) ? item.recipe : null;
+
+      if (mode === 'staff') {
+        const lines = [
+          `**${name}**`,
+          ...(buildArr ? buildArr.map(x => `• ${x}`) : (ingredients || []).map(x => `• ${x}`)),
+          item.glass ? `Glass: ${item.glass}` : null,
+          item.garnish ? `Garnish: ${Array.isArray(item.garnish) ? item.garnish.join(', ') : item.garnish}` : null
+        ].filter(Boolean);
+
+        const follow = `Would you like to know more about this cocktail or its ingredients?`;
+        return [lines.join('\n'), follow];
+      } else {
+        // guest: no detailed specs; keep to menu/ordering info
+        const lines = [
+          `**${name}**`,
+          ingredients && ingredients.length ? `Ingredients: ${ingredients.join(', ')}` : null,
+          item.price ? `Price: ${item.price}` : null,
+          item.glass ? `Glass: ${item.glass}` : null,
+          item.garnish ? `Garnish: ${Array.isArray(item.garnish) ? item.garnish.join(', ') : item.garnish}` : null,
+          item.character ? `Character: ${item.character}` : null,
+        ].filter(Boolean);
+
+        const follow = `Want to see similar drinks or check allergens?`;
+        return [lines.join('\n'), follow];
+      }
+    };
+
     if (matchKey) {
       const item = menu[matchKey] || {};
-      // Prefer "build" array; fall back to "recipe" array/string
-      const buildArr = Array.isArray(item.build) ? item.build :
-                       Array.isArray(item.recipe) ? item.recipe :
-                       (typeof item.recipe === 'string' ? [item.recipe] : []);
-
-      // Bubble 1: formatted spec
-      const lines = [
-        `**${matchKey}**`,
-        ...buildArr.map(x => `• ${x}`),
-        item.glass ? `Glass: ${item.glass}` : null,
-        item.garnish ? `Garnish: ${item.garnish}` : null
-      ].filter(Boolean);
-
-      // Bubble 2: follow‑up
-      const follow = `Would you like to know more about this cocktail or its ingredients?`;
-
-      return res.status(200).json({ bubbles: [lines.join('\n'), follow] });
+      return res.status(200).json({ bubbles: bubblesForItem(matchKey, item, mode) });
     }
 
-    // Fallback to LLM when we don't detect a direct match
+    // LLM fallback (mode-aware)
     const systemPrompt = `
-You are Ghost Donkey Trainer. You answer staff questions about the bar's menu with precise, current specs.
-Always format cocktail answers like this:
+You are Ghost Donkey Trainer.
+Respond as ${mode === 'staff' ? 'STAFF mode (training)' : 'GUEST mode (menu/ordering)'} with 1–2 short chat bubbles, returned as JSON: { "bubbles": [ ... ] }.
 
-**Cocktail Name**
-- 1oz Ingredient
-- 1oz Ingredient
-- 1oz Ingredient
-Glass: [type of glass]
-Garnish: [list garnishes]
+Formatting rules:
+- Bubble 1 (always):
+  - **Cocktail Name**
+  - If STAFF mode: bullet lines starting with "• " for build/spec or ingredients; include "Glass: ..." and "Garnish: ...".
+  - If GUEST mode: do NOT disclose detailed build/spec; give ingredients summary, Price, Glass, Garnish, Character if helpful.
 
-Then follow with a second short chat bubble:
-"Would you like to know more about this cocktail or its ingredients?"
+- Bubble 2 (always):
+  - STAFF: "Would you like to know more about this cocktail or its ingredients?"
+  - GUEST: "Want to see similar drinks or check allergens?"
 
-Keep responses brief. If the answer is long, split into multiple chat bubbles. 
-If the user asks for options, present them in a bulleted list.
-Knowledge base (for your internal reference):
+Other rules:
+- Keep responses brief and operational.
+- NEVER print the full knowledge base JSON verbatim.
+- If info is missing, say so briefly and suggest checking the spec sheet.
+Knowledge base (internal reference only):
 ${process.env.MENU_JSON || "{}"}
 `.trim();
 
@@ -82,20 +101,18 @@ ${process.env.MENU_JSON || "{}"}
     }
 
     const data = await r.json();
-    // Try to read a bubbles array if the model followed instructions
-    const content = data?.choices?.[0]?.message?.content || '';
-    // Basic parse attempt: expect something like a JSON code block or raw JSON
     let bubbles;
     try {
+      const content = data?.choices?.[0]?.message?.content || '';
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         if (Array.isArray(parsed.bubbles)) bubbles = parsed.bubbles;
       }
     } catch {}
-    // Fallback: treat content as one bubble + our standard follow-up
     if (!bubbles) {
-      bubbles = [content.trim(), 'Would you like to know more about this cocktail or its ingredients?'];
+      // Safe fallback: a single message
+      bubbles = [ (data?.choices?.[0]?.message?.content || 'No answer.').trim() ];
     }
 
     return res.status(200).json({ bubbles });
