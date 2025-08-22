@@ -7,135 +7,124 @@ export default async function handler(req, res) {
 
     const body = req.body || {};
     const queryRaw = body.query;
-    const mode = body.mode === 'staff' ? 'staff' : 'guest';
+    const mode = (body.mode === 'staff') ? 'staff' : 'guest';
 
     if (!queryRaw || !String(queryRaw).trim()) {
       return res.status(400).json({ error: 'Missing query' });
     }
 
-    // Load menu JSON safely
+    // Load menu JSON from env (safe parse)
     let menu = {};
-    try { menu = JSON.parse(process.env.MENU_JSON || '{}'); } catch { menu = {}; }
+    try {
+      menu = JSON.parse(process.env.MENU_JSON || '{}');
+    } catch {
+      menu = {};
+    }
 
     const query = String(queryRaw).trim();
     const q = query.toLowerCase();
 
-    // Helpers
-    const norm = (s) => String(s).toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim();
-    const uc = (s) => String(s || '').toUpperCase();
+    // Utils
+    const normalize = (s) => String(s).toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim();
+    const toBullets = (arr) => (arr || []).map(x => `• ${x}`);
+    const stringifyGarnish = (g) => Array.isArray(g) ? g.join(', ') : (g || '');
+    const priceLine = (price) => price ? `(${price})` : '';
 
-    // attempt to match a cocktail/spirits key in the menu JSON
-    const keys = Object.keys(menu || {});
-    let matchKey =
-      keys.find(k => q.includes(norm(k))) ||
-      keys.find(k => norm(k).includes(q));
+    // Turn "Character" into a one-sentence, guest-facing description
+    function characterToLine(charStr) {
+      if (!charStr) return null;
+      // e.g., "Sweet, Smoky, Creamy, Tart" -> "Sweet and smoky with a creamy, tart finish."
+      const parts = String(charStr).split(/[,•]/).map(s => s.trim()).filter(Boolean);
+      if (!parts.length) return null;
+      if (parts.length === 1) return `A ${parts[0].toLowerCase()} crowd-pleaser.`;
+      const last = parts.pop();
+      return `${parts.map(p => p.toLowerCase()).join(', ')} with a ${last.toLowerCase()} finish.`;
+    }
 
-    // Pick build arrays robustly
-    const getBuildArrays = (item) => {
-      // Support several shapes:
-      // item.build.batchBuild (array)
-      // item.build.singleBuild (array)
-      // item.build (array)
-      // item.recipe (array)
-      const build = item.build || {};
-      const batch = Array.isArray(build.batchBuild) ? build.batchBuild : null;
-      const single = Array.isArray(build.singleBuild) ? build.singleBuild
-                   : Array.isArray(item.recipe) ? item.recipe
-                   : Array.isArray(item.build) ? item.build
-                   : null;
-      return { batch, single };
-    };
-
-    const lineIf = (label, val) => {
-      if (!val) return null;
-      const text = Array.isArray(val) ? val.join(', ') : String(val);
-      return `**${label}:** ${text}`;
-    };
-
-    const detectRim = (garnish) => {
-      // Try to isolate rim if present (e.g., "Citrus Salt Rim", "Sal De Gusano 1/2 Rim")
-      if (!garnish) return { rim: null, rest: garnish };
-      const g = Array.isArray(garnish) ? garnish.join(', ') : String(garnish);
-      const rimMatch = g.match(/(^|,\s*)([^,]*rim[^,]*)/i);
-      if (rimMatch) {
-        const rimText = rimMatch[2].trim();
-        const rest = g.replace(rimMatch[0], '').replace(/^,\s*|\s*,\s*$/g, '');
-        return { rim: rimText, rest: rest || null };
+    // Simple upsell line (customize per cocktail if you like)
+    function upsellFor(name) {
+      const n = name.toLowerCase();
+      if (n.includes('highland picnic')) {
+        return `Pairs nicely with our chicken tinga tacos — just $2.75 each during happy hour until 8pm!`;
       }
-      return { rim: null, rest: g };
-    };
+      if (n.includes('margarita') || n.includes('paloma')) {
+        return `Great with chips & queso — and don’t miss happy hour pricing until 8pm!`;
+      }
+      if (n.includes('carajillo') || n.includes('espresso')) {
+        return `Try it with our churro bites for a dessert-worthy combo.`;
+      }
+      // default
+      return `This would go great with our chicken tinga tacos — $2.75 each on happy hour until 8pm!`;
+    }
 
-    const bullets = (arr) => (arr || []).map(x => `• ${x}`);
+    // Build a quiz bubble for staff
+    function quizFor(name, item) {
+      const choices = [];
+      if (item.glass) choices.push(`Quick check: what’s the glass for **${name}**?`);
+      if (item.garnish) choices.push(`Pop quiz: name one garnish on **${name}**.`);
+      if (Array.isArray(item.build?.singleBuild) && item.build.singleBuild.length) {
+        choices.push(`Recall: what’s the first ingredient in **${name}**?`);
+      } else if (Array.isArray(item.ingredients) && item.ingredients.length) {
+        choices.push(`Recall: name two ingredients in **${name}**.`);
+      }
+      if (!choices.length) choices.push(`Want a quick flashcard on **${name}**?`);
+      return choices[Math.floor(Math.random() * choices.length)];
+    }
 
-    // ===== Local-formatting for a matched item =====
-    const bubblesForItem = (name, item, mode) => {
-      const price = item.price ? `$${String(item.price).replace(/^\$/, '')}` : null;
-      const { batch, single } = getBuildArrays(item);
-      const glass = item.glass || null;
-      const garnish = item.garnish || null;
-      const { rim, rest: garnishRest } = detectRim(garnish);
-      const base = item.base || item.baseSpirit || null; // if you add base later
+    // Format bubbles for STAFF vs GUEST from a structured menu item
+    function bubblesForItem(name, item, mode) {
+      const ingredients = Array.isArray(item.ingredients) ? item.ingredients : null;
+
+      // Prefer batch or singleBuild arrays if present; else fall back to `ingredients`
+      const singleBuild =
+        Array.isArray(item.build?.singleBuild) ? item.build.singleBuild :
+        Array.isArray(item.recipe) ? item.recipe : null;
+
+      const batchBuild =
+        Array.isArray(item.build?.batchBuild) ? item.build.batchBuild : null;
+
+      const glass = item.glass ? `Glass: ${item.glass}` : null;
+      const garnish = item.garnish ? `Garnish: ${stringifyGarnish(item.garnish)}` : null;
 
       if (mode === 'staff') {
-        // STAFF rules:
-        // - If batch exists: show batch only, then ask if they want single
-        // - Else show single
-        // - Emoji header + ALL CAPS bold name + price
-        const header = `🌵 **${uc(name)}**${price ? ` (${price})` : ''}`;
-
-        let bodyLines;
-        let tailPrompt = null;
-
-        if (Array.isArray(batch) && batch.length) {
-          bodyLines = [
-            ...batch, // listed exactly as given (no "Build:" label)
-            '',
-            '🍹',
-            lineIf('Base', base),
-            lineIf('Glass', glass),
-            rim ? lineIf('Rim', rim) : null,
-            lineIf('Garnish', garnishRest)
-          ].filter(Boolean);
-          // Separator + prompt for single recipe
-          tailPrompt = '---\nWould you like to see the single cocktail recipe?';
-        } else {
-          // No batch: fall back to single
-          const singles = bullets(single || item.ingredients || []);
-          bodyLines = [
-            ...singles,
-            '',
-            '🍹',
-            lineIf('Base', base),
-            lineIf('Glass', glass),
-            rim ? lineIf('Rim', rim) : null,
-            lineIf('Garnish', garnishRest)
-          ].filter(Boolean);
+        // STAFF: one thing per line, bullets for build; if batch exists, show only batch; else single; else ingredients
+        let firstBlock = [`**${name}** ${priceLine(item.price)}`.trim()];
+        if (batchBuild && batchBuild.length) {
+          firstBlock = firstBlock.concat(toBullets(batchBuild));
+        } else if (singleBuild && singleBuild.length) {
+          firstBlock = firstBlock.concat(toBullets(singleBuild));
+        } else if (ingredients && ingredients.length) {
+          firstBlock = firstBlock.concat(toBullets(ingredients));
         }
+        if (glass) firstBlock.push(glass);
+        if (garnish) firstBlock.push(garnish);
 
-        const firstBubble = [header, '', ...bodyLines].join('\n');
-        const secondBubble = tailPrompt ? tailPrompt : 'Would you like anything else?';
-        return [firstBubble, secondBubble];
-
+        // Quiz bubble second
+        const quiz = quizFor(name, item);
+        return [firstBlock.join('\n'), quiz];
       } else {
-        // GUEST mode: sales-forward, no specs. Short, upsell-y, 2 bubbles max.
-        // Bubble 1: short description with ingredients summary if present (no measures)
-        // Bubble 2: upsell/next-step
-        const ingredients = Array.isArray(item.ingredients) ? item.ingredients : null;
+        // GUEST: Name + Price, blank line, crafted description, blank line, Ingredients list, upsell
+        const top = `**${name}** ${priceLine(item.price)}`.trim();
+        const desc = characterToLine(item.character) ||
+                     (ingredients && ingredients.length
+                        ? `Bright, balanced, and easy to love.`
+                        : `A house favorite with great balance.`);
+        const ing = (ingredients && ingredients.length)
+          ? `Ingredients: ${ingredients.join(', ')}`
+          : null;
+        const upsell = upsellFor(name);
 
-        const b1Parts = [
-          `**${name}**${price ? ` — ${price}` : ''}`,
-          item.character ? `${item.character}.` : null,
-          ingredients && ingredients.length ? `Ingredients: ${ingredients.join(', ')}.` : null,
-          glass ? `Served in ${glass}.` : null,
-          garnish ? `Garnish: ${Array.isArray(garnish) ? garnish.join(', ') : garnish}.` : null
-        ].filter(Boolean);
-
-        const b2 = `Want a recommendation or pairing? I can suggest similar drinks, a spirit upgrade, or a snack to match.`;
-        return [b1Parts.join(' '), b2];
+        const block = [top, '', desc, '', ing].filter(Boolean).join('\n');
+        return [block, upsell];
       }
-    };
+    }
 
-    // If local match → return immediately in our exact formatting
+    // Try to find a direct cocktail match from the MENU_JSON
+    const keys = Object.keys(menu || {});
+    let matchKey =
+      keys.find((k) => q.includes(normalize(k))) ||
+      keys.find((k) => normalize(k).includes(q));
+
     if (matchKey) {
       const item = menu[matchKey] || {};
       const bubbles = bubblesForItem(matchKey, item, mode);
@@ -145,74 +134,63 @@ export default async function handler(req, res) {
       });
     }
 
-    // ===== LLM fallback with your training baked in =====
-    const training = `
-You are Ghost Donkey Spirit Guide.
+    // Otherwise, fall back to the LLM with the menu JSON as context
+    const staffDirectives = `
+You are Ghost Donkey Spirit Guide (STAFF mode).
+- When a cocktail name is given, output ONLY two chat bubbles:
+  Bubble 1:
+    **NAME** (in bold ALL CAPS is NOT required, bold is enough)
+    Then each line on its own line, starting with "• " for each ingredient/line of the build.
+    Use ONLY the batch build if available; if not, use the single recipe.
+    After the bullets, include:
+    Glass: ...
+    Garnish: ...
+  Bubble 2:
+    A single quiz prompt related to that cocktail (glass, garnish, first ingredient, etc.).
 
-Primary Purpose (for staff):
-Help the user master the Ghost Donkey menu — with a strong focus on cocktails, food items, agave spirits, and mezcal — by Saturday.
-Use the uploaded "Ghost Donkey Training Doc" as your main knowledge source.
+Formatting:
+- One item per line. Use "• " bullets for build lines.
+- Do not print the entire knowledge JSON.
+- Keep it concise and scannable.
 
-Key Responsibilities:
-- Answer questions clearly, based only on the training material unless the user requests outside context.
-- Actively quiz the user on drinks, food ingredients, agave types, mezcal varietals, and flavor profiles.
-- Reinforce learning with flashcard-style drills, memory tips, and short quizzes during conversations.
-- Encourage active recall: after giving an answer, ask a related follow-up to strengthen memory.
-- Offer study advice, daily check-ins, and motivational encouragement to help the user stay on track.
+Example:
+**HIGHLAND PICNIC** ($15)
+• 3 oz Highland Batch
+• 0.5 oz Lime Juice
+• 0.5 oz Yuzu Juice
+• 1 oz Egg White
+Glass: Coupe
+Garnish: Orange Chip, Hibiscus Salt
+`;
 
-Cocktail Builds:
-- When the user asks for bar builds, only show the first build with batched ingredients.
-- Do not show the full builds for single cocktails unless specifically requested.
-- The batched ingredient build appears first in each recipe, before any notation about "single cocktail build."
-- When asked to show "bar builds," only include cocktails that appear on the current Ghost Donkey Dallas menu (Los Cocteles).
-- Do not include cocktail builds that appear only in the bar build section at the end of the document unless specifically requested.
-- Do not print the full knowledge base JSON verbatim.
-- Always assume if the user enters the name of a cocktail, they want the build only (concise, no extra intro).
+    const guestDirectives = `
+You are Ghost Donkey Spirit Guide (GUEST mode).
+Return ONLY two chat bubbles:
+  Bubble 1:
+    **Name** (bold) with price in parentheses on the same line.
+    Then a blank line.
+    Then a SHORT enticing description crafted from tasting notes/character (one sentence).
+    Then a blank line.
+    Then "Ingredients: ..." with a concise comma-separated list.
+  Bubble 2:
+    An upsell/pairing recommendation (e.g., tacos + happy hour note).
 
-Tone and Style:
-- Energetic, direct, supportive coach. Celebrate progress. Push for mastery.
-- Keep responses concise and practical.
-
-Boundaries:
-- Stick closely to source material unless asked for broader info.
-- Prioritize cocktails, food, agave spirits, mezcal production, flavor notes.
-
-Spirits Quick Card (when the user types a spirit name):
-- Provide: name & 1oz price, type & region, agave/base ingredient, key tasting notes, notable production, relevance to Ghost Donkey, optional upsell pairings.
-- 3–6 sentences, guest-ready tone.
-
-📌 Output Contract
-You must return a JSON object only: { "bubbles": [ ... ] } with 1–2 chat bubbles.
-
-STAFF mode (training) bubble format:
-- Bubble 1:
-  - Start with: "🌵 **[COCKTAIL NAME IN ALL CAPS]** ($Price)" on its own line if a cocktail.
-  - Then a bulleted list of ingredients/build lines (each on its own line, beginning with "• ").
-  - Then:
-      "🍹"
-      "**Base:** (text only)" if known
-      "**Glass:** (text only)" if known
-      "**Rim:** (text only)" ONLY if applicable
-      "**Garnish:** (text only)" if known
-- If both batch and single exist: show ONLY the batch build, then a horizontal rule ("---") and the question:
-  "Would you like to see the single cocktail recipe?"
-- If only single exists: show just that list and DO NOT ask the question at the end.
-
-GUEST mode (sales):
-- Do NOT reveal precise builds/specs or measures.
-- Keep to ingredients overview, price, style, vibe, and helpful upsell.
-- Use 2 short bubbles max (sales-forward; pairings or similar suggestions in bubble 2).
-
-Never include the full raw knowledge JSON in your response.
+Rules:
+- Do NOT reveal detailed build/spec lines in guest mode.
+- Keep it crisp and sales-forward.
 `;
 
     const systemPrompt = `
-${training}
+You have a structured JSON knowledge base with cocktails and fields like ingredients, build.batchBuild, build.singleBuild, glass, garnish, character, price.
 
-Internal knowledge base (JSON; do not print verbatim):
+Follow the correct mode strictly.
+
+${mode === 'staff' ? staffDirectives : guestDirectives}
+
+NEVER include the entire JSON. Output JSON only if asked; otherwise return plain text. If you choose to return JSON, it must be: { "bubbles": ["...","..."] }.
+
+Knowledge base (internal reference only):
 ${process.env.MENU_JSON || "{}"}
-
-Current mode: ${mode.toUpperCase()}
 `.trim();
 
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -233,25 +211,31 @@ Current mode: ${mode.toUpperCase()}
 
     if (!r.ok) {
       const text = await r.text().catch(() => '');
-      return res.status(502).json({ error: 'OpenAI error', status: r.status, detail: text.slice(0, 400) });
+      return res.status(502).json({
+        error: 'OpenAI error',
+        status: r.status,
+        detail: text.slice(0, 400)
+      });
     }
 
     const data = await r.json();
 
-    // Extract { "bubbles": [...] } safely
+    // Try to extract a JSON object with { bubbles: [...] } from the model output
     let bubbles = null;
     try {
       const content = data?.choices?.[0]?.message?.content || '';
-      const match = content.match(/\{[\s\S]*\}/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
         if (Array.isArray(parsed.bubbles)) {
           bubbles = parsed.bubbles.slice(0, 2);
         }
       }
       if (!bubbles) {
-        const fallback = (data?.choices?.[0]?.message?.content || 'No answer.').trim();
-        bubbles = [fallback];
+        // If the model returned plain text, split into up to 2 bubbles by double newlines
+        const plain = (data?.choices?.[0]?.message?.content || 'No answer.').trim();
+        const split = plain.split(/\n\s*\n/).slice(0, 2);
+        bubbles = split.length ? split : [plain];
       }
     } catch {
       const fallback = (data?.choices?.[0]?.message?.content || 'No answer.').trim();
@@ -260,9 +244,8 @@ Current mode: ${mode.toUpperCase()}
 
     return res.status(200).json({
       bubbles,
-      answer: bubbles.join('\n\n') // keep backward-compatible for your UI
+      answer: bubbles.join('\n\n')
     });
-
   } catch (e) {
     return res.status(500).json({ error: 'Server error', detail: String(e).slice(0, 400) });
   }
