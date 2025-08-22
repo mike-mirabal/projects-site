@@ -66,10 +66,10 @@
       align-items:baseline;
       flex-wrap:wrap;
     }
-    /* scale title down on tablets/phones */
+    /* scale title down on tablets/phones 
     @media (max-width: 768px) {
       .brand{ font-size: 1.5rem; }
-    }
+    }*/
 
     /* Single-word title styled like the old "Ghost Donkey" treatment */
     .brand .title{
@@ -80,15 +80,17 @@
         -2px 0 var(--accent),
         0 2px var(--accent),
         0 -2px var(--accent);
-      letter-spacing: .5px;
+      letter-spacing: 1px;
     }
+
     @media (max-width:768px){
       .brand .title{
         text-shadow:
-          1px 0 var(--accent),
-          -1px 0 var(--accent),
+          0 1px 0 var(--accent),
+          -0 1px 0 var(--accent),
           0 1px var(--accent),
           0 -1px var(--accent);
+        letter-spacing: .7px;
       }
     }
 
