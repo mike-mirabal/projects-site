@@ -75,17 +75,18 @@
     .brand .title{
       font-weight:900;
       color:var(--teal);
-      text-shadow:
-        2px 0 var(--accent),
+      text-shadow:-3px 3px 0px var(--accent);
+
+        /*2px 0 var(--accent),
         -2px 0 var(--accent),
         0 2px var(--accent),
-        0 -2px var(--accent);
+        0 -2px var(--accent);*/
       letter-spacing: 1px;
     }
 
     @media (max-width:768px){
       .brand .title{
-        text-shadow: none;
+        /* text-shadow: none; */
         letter-spacing: none;
       }
     }
@@ -157,6 +158,7 @@
     .msg.user{
       padding:8px;
       border-bottom:var(--border) solid var(--accent);
+      border-top:var(--border) solid var(--accent);
       border-radius:var(--radius);
       margin-left:auto;
       max-width:min(720px, 90%);

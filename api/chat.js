@@ -200,8 +200,8 @@ ${process.env.MENU_JSON || "{}"}
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        temperature: 0.2,
+        model: 'gpt-5-mini',
+        temperature: 0.4,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: query }
