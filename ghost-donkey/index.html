@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <title>Spirit Guide</title>
   <style>
     :root{
@@ -390,10 +390,12 @@
       }catch(err){
         console.error(err);
         appendAI('Network error. Try again.');
-      }finally{
-        sendBtn.disabled = false;
-        inputEl.focus();
-      }
+      } finally {
+  sendBtn.disabled = false;
+  // inputEl.focus();   // ❌ remove this
+  setTimeout(() => inputEl.blur(), 0); // ✅ hide mobile keyboard after send
+}
+
     }
 
     // Enter to send
