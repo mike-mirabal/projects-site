@@ -72,8 +72,19 @@
     }
     /* stack title on small screens while keeping toggle on the right */
     @media (max-width:560px){
-      .brand{display:block;}
+      .brand{display:block;}6
       .brand .line{display:block}
+      .brand .gd{
+      font-weight:600;
+      color:var(--teal);
+      text-shadow:
+        1px 0 var(--accent),
+        -1px 0 var(--accent),
+        0 1px var(--accent),
+        0 -1px var(--accent);
+    }
+
+
     }
 
     /* Toggle */
@@ -99,7 +110,7 @@
       .toggle button{
       all:unset;
       padding:6px 8px;
-      font-size: 0.5rem;
+      font-size: 0.75rem;
       font-weight:700;
       border-radius:999px;
     }}
