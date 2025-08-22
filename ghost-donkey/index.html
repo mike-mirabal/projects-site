@@ -71,8 +71,8 @@
       font-weight:600;
     }
     /* stack title on small screens while keeping toggle on the right */
-    @media (max-width:560px){
-      .brand{display:block;}6
+    @media (max-width:768px){
+      .brand{display:block;}
       .brand .line{display:block}
       .brand .gd{
       font-weight:600;
@@ -192,7 +192,7 @@
     }
     .send{
       flex:0 0 auto;
-      height:42px; width:46px;
+      height:40px; width:40px;
       border:var(--border) solid var(--accent);
       background:var(--accent);
       color:#fff;
@@ -205,8 +205,7 @@
 
     .hint{
       font-size:clamp(12px, .95vw, 14px);
-      margin-top:6px;
-      opacity:.95;
+      text-align: center;
     }
     .hint .b{ color:var(--teal); font-weight:800; }
     .hint .a{ color:var(--accent); font-weight:800; }
@@ -241,7 +240,7 @@
       <!-- Input row -->
       <div class="inputbar">
         <div class="field">
-          <input id="input" type="text" placeholder="Ask about cocktails, allergens, glassware…" />
+          <input id="input" type="text" placeholder="Ask anything..." />
         </div>
         <button id="send" class="send" title="Send" aria-label="Send">➤</button>
       </div>
