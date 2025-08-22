@@ -56,35 +56,34 @@
     }
     /* ===== Brand ===== */
     .brand{
-    display:inline-flex;                 /* sit content in a single row */
-    align-items:center;                /* align to text baseline */
-    gap:10px;
-    margin:0;
-    line-height:1.05;
-    font-weight:700;
-    font-size: 2rem;                     /* your current size */
-    letter-spacing:.3px;
-    white-space:nowrap;                  /* prevent wrapping */
+      display:inline-flex;                 /* sit content in a single row */
+      align-items:center;                  /* align to text baseline */
+      gap:10px;
+      margin:0;
+      line-height:1.05;
+      font-weight:700;
+      font-size: 2rem;                     /* your current size */
+      letter-spacing:.3px;
+      white-space:nowrap;                  /* prevent wrapping */
     }
     .brand .title{
-    font-weight:900;
-    color:var(--teal);
-    text-shadow:-3px 3px 0 var(--accent);
-    letter-spacing:1px;
+      font-weight:900;
+      color:var(--teal);
+      text-shadow:-3px 3px 0 var(--accent);
+      letter-spacing:1px;
     }
     .brand .brandmark{
-    height:1em;                          /* match text height */
-    width:auto;
-    object-fit:contain;
-    display:inline-block;
-    vertical-align:baseline;             /* align with text baseline */
-    transform: translateY(0.03em);       /* tiny nudge for optical alignment */
-    image-rendering:auto;
+      height:1em;                          /* match text height */
+      width:auto;
+      object-fit:contain;
+      display:inline-block;
+      vertical-align:baseline;             /* align with text baseline */
+      transform: translateY(0.03em);       /* tiny nudge for optical alignment */
+      image-rendering:auto;
     }
     @media (max-width:768px){
-    .brand{ font-size:1.6rem; }          /* scales both text & logo together */
+      .brand{ font-size:1.6rem; }          /* scales both text & logo together */
     }
-
 
     /* ===== Toggle ===== */
     .toggle{
@@ -118,14 +117,10 @@
       display:block;
       width:100%;
       height:auto;
-      margin:0;
+      margin:6px 0 6px;
       object-fit:contain;
     }
-    /*
-    @media (max-width:560px){
-      .divider{ display:none; }
-    }
-      */
+    /* (Removed the rule that hid .divider on mobile so it shows everywhere) */
 
     /* ===== Chat panel (fills remaining height) ===== */
     .panel{
@@ -184,8 +179,14 @@
       border-radius: 4px;
       background:var(--bg);
       padding:8px 10px;
-      
     }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .field input{
       all:unset;
       flex:1 1 auto; min-width:0;
@@ -193,62 +194,36 @@
       line-height:1.2;
       color:var(--text);
     }
-.field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-    /* Mic button 
-    .mic{
-      all:unset;
-      cursor:pointer;
-      font-size:20px;
-      line-height:1;
-      padding:4px 6px;
-    }*/
 
-    .mic {
-  all: unset;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  height: 28px;
-  width: 28px;
-}
+    .mic{
+      all: unset;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      height: 28px;
+      width: 28px;
+    }
     .mic.listening{ color:var(--accent); }
     .mic.recording{ color:var(--teal); }
 
-.mic img, .send img {
-  display: block;
-  height: 24px;
-  width: 24px;
-}
+    .mic img, .send img {
+      display: block;
+      height: 24px;
+      width: 24px;
+    }
 
-.send {
-  flex: 0 0 auto;
-  height: 40px;
-  width: 40px;
-  border: var(--border) solid var(--accent);
-  background: var(--accent);
-  color: #fff;
-  border-radius: 4px;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-
-   /* .send{
-      flex:0 0 auto;
-      height:40px; width:44px;
-      border:var(--border) solid var(--accent);
-      background:var(--accent);
-      color:#fff;
-      border-radius:var(--radius);
-      cursor:pointer;
-      display:grid; place-items:center;
-      font-size:18px; font-weight:900;
-    } */
-
+    .send {
+      flex: 0 0 auto;
+      height: 40px;
+      width: 40px;
+      border: var(--border) solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
     .send:disabled{ opacity:.55; cursor:not-allowed; }
 
     .hint{
@@ -271,10 +246,10 @@
     <!-- Top bar -->
     <div class="topbar">
       <h1 class="brand" aria-label="Spirit Guide">
-  <img class="brandmark" src="/ghost-donkey/GD-Burro-1.webp" alt="" />
-  <span class="title">SPIRIT&nbsp;GUIDE</span>
-</h1>
-<!-- Toggle -->
+        <img class="brandmark" src="/ghost-donkey/GD-Burro-1.webp" alt="" />
+        <span class="title">SPIRIT&nbsp;GUIDE</span>
+      </h1>
+      <!-- Toggle -->
       <div class="toggle" role="tablist" aria-label="Mode">
         <button id="staffBtn" class="on" role="tab" aria-selected="true">Staff</button>
         <button id="guestBtn" class="off" role="tab" aria-selected="false">Guest</button>
@@ -288,24 +263,20 @@
     <section class="panel" aria-label="Chat">
       <div id="chat" class="scroll" aria-live="polite" aria-relevant="additions"></div>
 
-     <!-- Input row -->
-<div id="composer" class="inputbar">
-  <div class="field">
-    <input id="input" type="text" placeholder="Ask anything..." />
-    <!-- Mic button inside field -->
-    <button id="mic" class="mic" title="Voice input" aria-label="Voice input">
-      <img src="/ghost-donkey/GD-icon-voice.svg" alt="Mic" />
-    </button>
-
- <!-- Send button -->
-  <button id="send" class="send" title="Send" aria-label="Send">
-    <img src="/ghost-donkey/GD-icon-send.svg" alt="Send" />
-  </button>
-</div>
-
-  </div>
- 
-
+      <!-- Input row -->
+      <div id="composer" class="inputbar">
+        <div class="field">
+          <input id="input" type="text" placeholder="Ask anything..." />
+          <!-- Mic button inside field -->
+          <button id="mic" class="mic" title="Voice input" aria-label="Voice input">
+            <img src="/ghost-donkey/GD-icon-voice.svg" alt="Mic" />
+          </button>
+           <!-- Send button (inside the field) -->
+        <button id="send" class="send" title="Send" aria-label="Send">
+          <img src="/ghost-donkey/GD-icon-send.svg" alt="Send" />
+        </button>
+        </div>
+      </div>
 
       <div class="hint">
         <span class="b">Staff</span> shows builds & specs • <span class="a">Guest</span> is menu & ordering.
@@ -321,7 +292,7 @@
     const guestBtn = document.getElementById('guestBtn');
     const staffBtn = document.getElementById('staffBtn');
     const composer = document.getElementById('composer');
-    const micBtn   = document.getElementById('micBtn');
+    const micBtn   = document.getElementById('mic'); // <- FIXED id hookup
 
     let mode = 'staff'; // 'guest' | 'staff'
 
@@ -431,8 +402,7 @@
     sendBtn.addEventListener('click', send);
 
     // ===== Voice Input =====
-    // Flip this to true if you want to force Whisper for everything
-    const USE_WHISPER = false;
+    const USE_WHISPER = false; // flip true to force Whisper route
 
     let recognition;     // Web Speech
     let mediaStream;     // gUM stream
