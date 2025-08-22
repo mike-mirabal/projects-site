@@ -1,4 +1,10 @@
 // /api/chat.js
+// Simple in-memory context for the current process. (Good enough for MVP.)
+// If you're on serverless, instances may recycle; for persistence across users,
+// switch to a per-user session mechanism (cookie/sessionID + store).
+let lastCocktail = null;          // last matched cocktail name
+let pendingSingleFor = null;      // cocktail awaiting "yes" to show single build
+
 export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') {
@@ -13,7 +19,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing query' });
     }
 
-    // Load menu JSON from env (safe parse)
+    // ===== Load menu JSON from env (safe parse) =====
     let menu = {};
     try {
       menu = JSON.parse(process.env.MENU_JSON || '{}');
@@ -24,275 +30,286 @@ export default async function handler(req, res) {
     const query = String(queryRaw).trim();
     const q = query.toLowerCase();
 
-    // ---------- Utils ----------
+    // ===== Utils =====
     const normalize = (s) => String(s).toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim();
-    const keys = Object.keys(menu || {});
-    const priceLine = (price) => price ? `(${price})` : '';
-
+    const toBullets = (arr) => (arr || []).map(x => `• ${x}`);
     const stringifyGarnish = (g) => Array.isArray(g) ? g.join(', ') : (g || '');
+    const priceSpan = (price) => price ? `<span>${price}</span>` : '';
 
-    // Escape for HTML safety
-    const esc = (s) => String(s ?? '')
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-
-    // Find a cocktail key mentioned in free text
-    function findKeyInText(text) {
-      const t = String(text || '').toLowerCase();
-      return (
-        keys.find(k => t.includes(normalize(k))) ||
-        keys.find(k => normalize(k).includes(t))
-      ) || null;
+    // Pulls single & batch builds while supporting either top-level arrays
+    //   item.build, item.batchBuild
+    // or nested: item.build.singleBuild, item.build.batchBuild
+    function getSingleBuild(item) {
+      if (Array.isArray(item.build?.singleBuild)) return item.build.singleBuild;
+      if (Array.isArray(item.recipe)) return item.recipe;
+      if (Array.isArray(item.build)) return item.build;
+      return null;
+    }
+    function getBatchBuild(item) {
+      if (Array.isArray(item.build?.batchBuild)) return item.build.batchBuild;
+      if (Array.isArray(item.batchBuild)) return item.batchBuild;
+      return null;
     }
 
-    // Fuzzy match against keys
-    let matchKey =
-      keys.find(k => q.includes(normalize(k))) ||
-      keys.find(k => normalize(k).includes(q));
-
-    // Render STAFF build (HTML)
-    function renderStaffHTML(name, price, lines, glass, garnish) {
-      const title = `
-        <div class="build-title">
-          <span class="accent-teal"><strong>${esc(name)}</strong></span>
-          ${price ? ` <span class="price">${esc(price)}</span>` : ''}
-        </div>`;
-      const list = Array.isArray(lines) && lines.length
-        ? `<ul class="build-list">${lines.map(li => `<li>${esc(li)}</li>`).join('')}</ul>`
-        : '';
-      const glassLine   = glass   ? `<div>Glass: ${esc(glass)}</div>` : '';
-      const garnishLine = garnish ? `<div>Garnish: ${esc(garnish)}</div>` : '';
-      return `${title}${list}${glassLine}${garnishLine}`;
+    // Guest-facing description synthesized from "character"
+    function characterToLine(charStr) {
+      if (!charStr) return null;
+      const parts = String(charStr).split(/[,•]/).map(s => s.trim()).filter(Boolean);
+      if (!parts.length) return null;
+      if (parts.length === 1) return `A ${parts[0].toLowerCase()} crowd-pleaser.`;
+      const last = parts.pop();
+      return `${parts.map(p => p.toLowerCase()).join(', ')} with a ${last.toLowerCase()} finish.`;
     }
 
-    // Create STAFF/Guest bubbles from a structured item
-    function bubblesForItem(name, item, mode, opts = {}) {
+    // Simple upsell line
+    function upsellFor(name) {
+      const n = name.toLowerCase();
+      if (n.includes('highland picnic')) {
+        return `This would go great with our chicken tinga tacos.\nThey’re only $2.75 each on happy hour ‘til 8pm!`;
+      }
+      if (n.includes('margarita') || n.includes('paloma')) {
+        return `Chips & queso is the move — and happy hour deals run ‘til 8pm!`;
+      }
+      if (n.includes('carajillo') || n.includes('espresso')) {
+        return `Pair it with our churro bites for a dessert-worthy combo.`;
+      }
+      return `This would go great with our chicken tinga tacos.\nThey’re only $2.75 each on happy hour ‘til 8pm!`;
+    }
+
+    // Build a quiz bubble for staff
+    function quizFor(name, item) {
+      const choices = [];
+      const single = getSingleBuild(item);
+      const batch  = getBatchBuild(item);
+      if (item.glass) choices.push(`Quick check: what’s the glass for <strong>${name}</strong>?`);
+      if (item.garnish) choices.push(`Pop quiz: name one garnish on <strong>${name}</strong>.`);
+      if (batch && batch.length) {
+        choices.push(`Recall: what’s the <em>first</em> ingredient in the batch build for <strong>${name}</strong>?`);
+      } else if (single && single.length) {
+        choices.push(`Recall: what’s the <em>first</em> ingredient in the single build for <strong>${name}</strong>?`);
+      } else if (Array.isArray(item.ingredients) && item.ingredients.length) {
+        choices.push(`Recall: name two ingredients in <strong>${name}</strong>.`);
+      }
+      if (!choices.length) choices.push(`Want a quick flashcard on <strong>${name}</strong>?`);
+      return choices[Math.floor(Math.random() * choices.length)];
+    }
+
+    // HTML rendering for STAFF vs GUEST
+    function bubblesForItem(name, item, mode) {
       const ingredients = Array.isArray(item.ingredients) ? item.ingredients : null;
+      const singleBuild = getSingleBuild(item);
+      const batchBuild  = getBatchBuild(item);
 
-      // The JSON you pasted sometimes uses `build` (single recipe) and/or `batchBuild`.
-      // Also support nested structures if you introduce them later.
-      const singleBuild =
-        Array.isArray(item.singleBuild) ? item.singleBuild :
-        Array.isArray(item.build?.singleBuild) ? item.build.singleBuild :
-        Array.isArray(item.build) ? item.build : // your current JSON uses this for single recipe
-        Array.isArray(item.recipe) ? item.recipe : null;
-
-      const batchBuild =
-        Array.isArray(item.batchBuild) ? item.batchBuild :
-        Array.isArray(item.build?.batchBuild) ? item.build.batchBuild : null;
-
-      const glass = item.glass || null;
-      const garnish = stringifyGarnish(item.garnish);
+      const glass   = item.glass ? `Glass: ${item.glass}` : null;
+      const garnish = item.garnish ? `Garnish: ${stringifyGarnish(item.garnish)}` : null;
 
       if (mode === 'staff') {
-        // Show batch by default; if explicitly asking for single, show single.
-        const wantSingle = !!opts.singleOnly;
+        // STAFF: show BATCH first if present; otherwise single; otherwise ingredients
+        const header = `<span class="accent-teal"><strong>${name}</strong></span> ${priceSpan(item.price)}`.trim();
+        let firstBlock = [header];
 
-        let chosenLines = null;
-        if (!wantSingle && batchBuild && batchBuild.length) {
-          chosenLines = batchBuild;
+        if (batchBuild && batchBuild.length) {
+          firstBlock = firstBlock.concat(toBullets(batchBuild));
         } else if (singleBuild && singleBuild.length) {
-          chosenLines = singleBuild;
+          firstBlock = firstBlock.concat(toBullets(singleBuild));
         } else if (ingredients && ingredients.length) {
-          chosenLines = ingredients;
-        } else {
-          chosenLines = [];
+          firstBlock = firstBlock.concat(toBullets(ingredients));
         }
 
-        const html = renderStaffHTML(name, item.price, chosenLines, glass, garnish);
-        const follow =
-          wantSingle
-            ? `Need anything else about <span class="accent-teal"><strong>${esc(name)}</strong></span>?`
-            : `Do you want to see the single cocktail build without batch?`;
+        if (glass) firstBlock.push(glass);
+        if (garnish) firstBlock.push(garnish);
 
-        return [html, follow];
+        // Follow-up: specifically ask about single cocktail build (without batch)
+        let secondBubble = `Do you want to see the single cocktail build without batch?`;
+
+        // If there is NO batch but there IS single, then we already showed single.
+        // Use a different follow up (offer a quiz or ask for another drink).
+        if (!batchBuild && singleBuild && singleBuild.length) {
+          secondBubble = `Need the batch build again, or want a quick quiz?`;
+        }
+
+        return [firstBlock.join('<br>'), secondBubble];
       } else {
-        // GUEST bubble: name + price, blank line, enticing one-liner, blank line, Ingredients
-        const top = `
-          <div class="guest-title">
-            <span class="accent-teal"><strong>${esc(name)}</strong></span> ${esc(priceLine(item.price))}
-          </div>`.trim();
-
-        const description = (() => {
-          const charStr = String(item.character || '').trim();
-          if (!charStr) return `Balanced and easy to love — a house favorite.`;
-          const parts = charStr.split(/[,•]/).map(s => s.trim()).filter(Boolean);
-          if (!parts.length) return `Balanced and easy to love — a house favorite.`;
-          if (parts.length === 1) return `A ${parts[0].toLowerCase()} crowd‑pleaser.`;
-          const last = parts.pop();
-          return `${parts.map(p => p.toLowerCase()).join(', ')} with a ${String(last).toLowerCase()} finish.`;
-        })();
-
+        // GUEST: Name + Price, blank line, enticing desc, blank line, Ingredients
+        const top = `<span class="accent-teal"><strong>${name}</strong></span> ${priceSpan(item.price)}`.trim();
+        const desc = characterToLine(item.character)
+          || (ingredients && ingredients.length
+              ? `Bright, balanced, and easy to love.`
+              : `A house favorite with great balance.`);
         const ing = (ingredients && ingredients.length)
-          ? `<div>Ingredients: ${esc(ingredients.join(', '))}</div>` : '';
+          ? `Ingredients: ${ingredients.join(', ')}`
+          : null;
+        const upsell = upsellFor(name);
 
-        const bubble1 = [top, `<div style="height:6px"></div>`, `<div>${esc(description)}</div>`, `<div style="height:6px"></div>`, ing]
-          .filter(Boolean).join('\n');
-
-        // Upsell
-        const upsell = (() => {
-          const n = name.toLowerCase();
-          if (n.includes('highland picnic')) {
-            return `Pairs nicely with our chicken tinga tacos — just $2.75 each during happy hour until 8pm!`;
-          }
-          if (n.includes('margarita') || n.includes('paloma')) {
-            return `Great with chips & queso — and don’t miss happy hour pricing until 8pm!`;
-          }
-          if (n.includes('carajillo') || n.includes('espresso')) {
-            return `Try it with our churro bites for a dessert‑worthy combo.`;
-          }
-          return `This would go great with our chicken tinga tacos — $2.75 each on happy hour until 8pm!`;
-        })();
-
-        return [bubble1, upsell];
+        const block = [top, '', desc, '', ing].filter(Boolean).join('<br>');
+        return [block, upsell];
       }
     }
 
-    // ---------- STAFF: explicit quiz mode ----------
-    const wantsQuiz = (mode === 'staff') && /\b(quiz|test|flashcard|drill)\b/i.test(q);
+    // ===== Try to find a direct cocktail match from the MENU_JSON =====
+    const keys = Object.keys(menu || {});
+    let matchKey =
+      keys.find((k) => q.includes(normalize(k))) ||
+      keys.find((k) => normalize(k).includes(q));
 
-    if (wantsQuiz) {
-      // If a cocktail name is present, quiz on that; else pick a random one.
-      const nameForQuiz = findKeyInText(query) || (keys.length ? keys[Math.floor(Math.random() * keys.length)] : null);
-      if (!nameForQuiz) {
-        return res.status(200).json({
-          bubbles: [
-            `Sorry, I don’t have items to quiz yet. Add cocktails to the menu JSON first.`,
-          ],
-          answer: `Sorry, I don’t have items to quiz yet. Add cocktails to the menu JSON first.`
-        });
+    // ===== If the previous step asked for single, accept a "yes" reply =====
+    const affirmative = /^(y|yes|yeah|yep|sure|ok|okay|show me|please|show|let me see)\b/i.test(query);
+    if (affirmative && pendingSingleFor && menu[pendingSingleFor]) {
+      const item = menu[pendingSingleFor];
+      const singleBuild = getSingleBuild(item);
+      const header = `<span class="accent-teal"><strong>${pendingSingleFor}</strong></span> ${priceSpan(item.price)}`.trim();
+      let firstBlock = [header];
+      if (singleBuild && singleBuild.length) {
+        firstBlock = firstBlock.concat(toBullets(singleBuild));
+      } else if (Array.isArray(item.ingredients) && item.ingredients.length) {
+        firstBlock = firstBlock.concat(toBullets(item.ingredients));
       }
-      const item = menu[nameForQuiz] || {};
-      // Build quiz prompts based on available fields
-      const prompts = [];
-      if (item.glass) prompts.push(`Quick quiz: What’s the <strong>glass</strong> for <span class="accent-teal"><strong>${esc(nameForQuiz)}</strong></span>?`);
-      if (item.garnish) prompts.push(`Pop quiz: Name one <strong>garnish</strong> on <span class="accent-teal"><strong>${esc(nameForQuiz)}</strong></span>.`);
-      const firstSingle =
-        Array.isArray(item.build?.singleBuild) ? item.build.singleBuild[0] :
-        Array.isArray(item.build) ? item.build[0] :
-        Array.isArray(item.recipe) ? item.recipe[0] : null;
-      if (firstSingle) prompts.push(`Recall: What’s the <strong>first ingredient</strong> in <span class="accent-teal"><strong>${esc(nameForQuiz)}</strong></span>?`);
-      if (!prompts.length) prompts.push(`Ready for a flashcard on <span class="accent-teal"><strong>${esc(nameForQuiz)}</strong></span>? What’s one ingredient?`);
+      if (item.glass)   firstBlock.push(`Glass: ${item.glass}`);
+      if (item.garnish) firstBlock.push(`Garnish: ${stringifyGarnish(item.garnish)}`);
 
-      const question = prompts[Math.floor(Math.random() * prompts.length)];
-      const helper = `Say “another quiz” for a new one, or ask for a cocktail by name.`;
+      // Clear pending since we just served it
+      lastCocktail = pendingSingleFor;
+      pendingSingleFor = null;
 
+      const follow = `Need the batch build again, or want a quick quiz?`;
       return res.status(200).json({
-        bubbles: [question, helper],
-        answer: `${question}\n\n${helper}`
+        bubbles: [firstBlock.join('<br>'), follow],
+        answer: [firstBlock.join('\n'), follow].join('\n\n')
       });
     }
 
-    // ---------- STAFF: "single build" intent (stateless) ----------
-    const wantsSingleOnly = (mode === 'staff') && /\b(single\s*(cocktail)?\s*(build)?|no\s*batch|without\s*batch)\b/i.test(q);
-    if (wantsSingleOnly) {
-      const keyFromText = findKeyInText(query);
-      if (!keyFromText) {
-        const guidance = `Tell me which cocktail: e.g., <em>“single build Highland Picnic”</em>.`;
+    // ===== "quiz" command: quiz on last cocktail =====
+    if (/\bquiz\b/i.test(query)) {
+      if (lastCocktail && menu[lastCocktail]) {
+        const qz = quizFor(lastCocktail, menu[lastCocktail]);
         return res.status(200).json({
-          bubbles: [guidance],
-          answer: guidance
+          bubbles: [qz],
+          answer: qz
+        });
+      } else {
+        return res.status(200).json({
+          bubbles: ["Pick a cocktail first, then I’ll quiz you!"],
+          answer: "Pick a cocktail first, then I’ll quiz you!"
         });
       }
-      const item = menu[keyFromText] || {};
-      const bubbles = bubblesForItem(keyFromText, item, 'staff', { singleOnly: true });
-      return res.status(200).json({ bubbles, answer: bubbles.join('\n\n') });
     }
 
-    // ---------- Direct match from JSON ----------
+    // ===== If we have a match, render locally (no LLM) =====
     if (matchKey) {
       const item = menu[matchKey] || {};
-      const bubbles = bubblesForItem(matchKey, item, mode, { singleOnly: false });
+      lastCocktail = matchKey;
+
+      const bubbles = bubblesForItem(matchKey, item, mode);
+
+      // If STAFF and both batch & single exist, set pending flag to allow "yes" next
+      if (mode === 'staff') {
+        const hasBatch  = !!getBatchBuild(item)?.length;
+        const hasSingle = !!getSingleBuild(item)?.length;
+        pendingSingleFor = (hasBatch && hasSingle) ? matchKey : null;
+      } else {
+        pendingSingleFor = null;
+      }
+
       return res.status(200).json({
         bubbles,
-        answer: bubbles.join('\n\n')
+        answer: bubbles.map(b => b.replaceAll('<br>', '\n')).join('\n\n')
       });
     }
 
-    // ---------- Fallback to LLM for general questions ----------
+    // ===== Otherwise, fall back to the LLM with the menu JSON as context =====
     const staffDirectives = `
-You are Ghost Donkey Spirit Guide (STAFF mode).
-When a cocktail name is given, output ONLY two chat bubbles:
+You are the Spirit Guide in STAFF mode.
+Return EXACTLY { "bubbles": ["...","..."] } with HTML ONLY (no markdown).
+When a cocktail is mentioned by name:
+- Bubble 1 (HTML):
+  - Title line: <span class="accent-teal"><strong>NAME</strong></span> (price in parentheses on the same line if available)
+  - Then each build line on its own line using the "• " bullet prefix (these are literal text lines; keep the original text with quantities like "1 oz ...").
+  - Show ONLY the batch build if available; if no batch, show the single recipe.
+  - After the bullets, include:
+    - Glass: ...
+    - Garnish: ...
+  - Separate lines with <br>, not new paragraphs.
+- Bubble 2 (HTML):
+  - If both batch and single exist: "Do you want to see the single cocktail build without batch?"
+  - If only single exists: "Need the batch build again, or want a quick quiz?"
 
-Bubble 1 (HTML only — no markdown):
-- Title line: "<span class='accent-teal'><strong>NAME</strong></span> (PRICE)" on a single line.
-- Then a bulleted list (<ul><li>...</li></ul>) of the build with one ingredient per <li>.
-- By default show ONLY the batch build (if available); if no batch exists, show the single recipe instead.
-- After the list, show:
-  - "Glass: ..."
-  - "Garnish: ..."
-Everything must be valid HTML. Do not use asterisks or markdown.
-
-Bubble 2 (plain sentence):
-- Ask: "Do you want to see the single cocktail build without batch?"
-
-If the request is "single build [name]" or "without batch [name]" show Bubble 1 using only the single (non-batch) build, then Bubble 2: "Need anything else about NAME?"
-Keep responses concise and scannable. Never dump the entire knowledge JSON.
-`.trim();
+Rules:
+- Use valid HTML only (no markdown).
+- Do not reveal the entire knowledge JSON.
+- Keep responses concise and scannable.
+`;
 
     const guestDirectives = `
-You are Ghost Donkey Spirit Guide (GUEST mode).
-Return ONLY two chat bubbles, as HTML (no markdown):
+You are the Spirit Guide in GUEST mode.
+Return EXACTLY { "bubbles": ["...","..."] } with HTML ONLY (no markdown).
+- Bubble 1 (HTML):
+  - Title line: <span class="accent-teal"><strong>Name</strong></span> (price)
+  - Blank line (<br>) then a SHORT enticing description crafted from tasting notes/character (one sentence).
+  - Blank line (<br>) then "Ingredients: ..." as a concise comma-separated list (no detailed build/spec).
+- Bubble 2 (HTML):
+  - A specific upsell/pairing recommendation (e.g., tacos + happy hour note).
 
-Bubble 1:
-- A title line: "<span class='accent-teal'><strong>Name</strong></span> (PRICE)"
-- Blank spacer (e.g., <div style="height:6px"></div>)
-- A SHORT enticing one-sentence description crafted from tasting notes/character.
-- Blank spacer
-- "Ingredients: ..." as a single line (no detailed build steps).
-
-Bubble 2:
-- A sales-forward upsell/pairing recommendation (e.g., tacos + happy hour).
-
-Never reveal detailed build/spec in guest mode. Keep it crisp and sales-forward.
-`.trim();
+Rules:
+- No detailed build/spec lines in guest mode.
+- Use valid HTML only (no markdown).
+- Be crisp and sales-forward.
+`;
 
     const systemPrompt = `
-You have a structured JSON knowledge base with cocktails and fields like ingredients, batchBuild, build (single recipe), glass, garnish, character, price.
+You have a structured JSON knowledge base with cocktails and fields like ingredients, build/batchBuild, glass, garnish, character, price.
+Follow the correct mode strictly.
 
-Follow the correct mode strictly:
 ${mode === 'staff' ? staffDirectives : guestDirectives}
 
-NEVER include the entire JSON. If you output JSON, it must be: { "bubbles": ["...","..."] }.
-HTML is preferred; do not output markdown.
+ALWAYS return JSON in this exact shape:
+{ "bubbles": ["<HTML bubble 1>", "<HTML bubble 2>"] }
 
+NEVER include or print the entire knowledge JSON.
 Knowledge base (internal reference only):
 ${process.env.MENU_JSON || "{}"}
 `.trim();
 
-    const r = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-5-mini',
-        temperature: 0.4,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: query }
-        ]
-      })
-    });
+    // Call the model for non-matching queries (general Q&A)
+    let data;
+    try {
+      const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-5-mini',
+          temperature: 0.4,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: query }
+          ]
+        })
+      });
 
-    if (!r.ok) {
-      const text = await r.text().catch(() => '');
-      return res.status(502).json({
-        error: 'OpenAI error',
-        status: r.status,
-        detail: text.slice(0, 400)
+      if (!r.ok) {
+        const text = await r.text().catch(() => '');
+        // Model failed — return friendly fallback
+        return res.status(200).json({
+          bubbles: ["Sorry, I don't have this answer yet. I'm still learning..."],
+          answer: "Sorry, I don't have this answer yet. I'm still learning..."
+        });
+      }
+
+      data = await r.json();
+    } catch {
+      // Network/other error — friendly fallback
+      return res.status(200).json({
+        bubbles: ["Sorry, I don't have this answer yet. I'm still learning..."],
+        answer: "Sorry, I don't have this answer yet. I'm still learning..."
       });
     }
-
-    const data = await r.json();
 
     // Try to extract a JSON object with { bubbles: [...] } from the model output
     let bubbles = null;
     try {
       const content = data?.choices?.[0]?.message?.content || '';
-      // Prefer an embedded JSON object if present
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
@@ -301,24 +318,29 @@ ${process.env.MENU_JSON || "{}"}
         }
       }
       if (!bubbles) {
-        // If the model returned plain text/HTML, split into up to 2 bubbles by double newlines
+        // If the model returned plain text, split into up to 2 bubbles by double newlines
         const plain = (data?.choices?.[0]?.message?.content || '').trim();
-        const split = plain ? plain.split(/\n\s*\n/).slice(0, 2) : null;
-        bubbles = (split && split.length) ? split : null;
+        if (plain) {
+          const split = plain.split(/\n\s*\n/).slice(0, 2);
+          bubbles = split.length ? split : [plain];
+        }
       }
     } catch {
-      bubbles = null;
+      // Parsing issue — fallback
     }
 
-    if (!bubbles) {
-      const fallback = `Sorry, I don't have this answer yet. I'm still learning...`;
-      return res.status(200).json({ bubbles: [fallback], answer: fallback });
+    if (!bubbles || !bubbles.length) {
+      return res.status(200).json({
+        bubbles: ["Sorry, I don't have this answer yet. I'm still learning..."],
+        answer: "Sorry, I don't have this answer yet. I'm still learning..."
+      });
     }
 
     return res.status(200).json({
       bubbles,
       answer: bubbles.join('\n\n')
     });
+
   } catch (e) {
     return res.status(500).json({ error: 'Server error', detail: String(e).slice(0, 400) });
   }
