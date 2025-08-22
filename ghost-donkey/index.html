@@ -44,52 +44,47 @@
 
     /* ===== Top bar (sticky) ===== */
     .topbar{
-      position:sticky;
-      top:env(safe-area-inset-top, 0);
-      z-index:10;
-      background:var(--bg);
-      display:grid;
-      grid-template-columns: 1fr auto; /* title left, toggle right */
-      align-items:center;
-      gap:12px;
-      padding:8px 0 2px;
+        position:sticky;
+        top:env(safe-area-inset-top, 0);
+        z-index:10;
+        background:var(--bg);
+        display:grid;
+        grid-template-columns: 1fr auto; /* title left, toggle right */
+        align-items:center;
+        gap:12px;
+        padding:8px 0 2px;
     }
-
+    /* ===== Brand ===== */
     .brand{
-      font-size: 2rem;
-      line-height:1.05;
-      margin:0;
-      font-weight:700;
-      letter-spacing:.3px;
-      display:flex;
-      gap:10px;
-      align-items:baseline;
-      flex-wrap:wrap;
+    display:inline-flex;                 /* sit content in a single row */
+    align-items:center;                /* align to text baseline */
+    gap:10px;
+    margin:0;
+    line-height:1.05;
+    font-weight:700;
+    font-size: 2rem;                     /* your current size */
+    letter-spacing:.3px;
+    white-space:nowrap;                  /* prevent wrapping */
     }
-    /* scale title down on tablets/phones 
-    @media (max-width: 768px) {
-      .brand{ font-size: 1.5rem; }
-    }*/
-
-    /* Single-word title styled like the old "Ghost Donkey" treatment */
     .brand .title{
-      font-weight:900;
-      color:var(--teal);
-      text-shadow:-3px 3px 0px var(--accent);
-
-        /*2px 0 var(--accent),
-        -2px 0 var(--accent),
-        0 2px var(--accent),
-        0 -2px var(--accent);*/
-      letter-spacing: 1px;
+    font-weight:900;
+    color:var(--teal);
+    text-shadow:-3px 3px 0 var(--accent);
+    letter-spacing:1px;
     }
-
+    .brand .brandmark{
+    height:1em;                          /* match text height */
+    width:auto;
+    object-fit:contain;
+    display:inline-block;
+    vertical-align:baseline;             /* align with text baseline */
+    transform: translateY(0.03em);       /* tiny nudge for optical alignment */
+    image-rendering:auto;
+    }
     @media (max-width:768px){
-      .brand .title{
-        /* text-shadow: none; */
-        letter-spacing: none;
-      }
+    .brand{ font-size:1.6rem; }          /* scales both text & logo together */
     }
+
 
     /* ===== Toggle ===== */
     .toggle{
@@ -192,6 +187,18 @@
       line-height:1.2;
       color:var(--text);
     }
+
+    /* Mic button */
+    .mic{
+      all:unset;
+      cursor:pointer;
+      font-size:20px;
+      line-height:1;
+      padding:4px 6px;
+    }
+    .mic.listening{ color:var(--accent); }
+    .mic.recording{ color:var(--teal); }
+
     .send{
       flex:0 0 auto;
       height:40px; width:44px;
@@ -225,8 +232,10 @@
     <!-- Top bar -->
     <div class="topbar">
       <h1 class="brand" aria-label="Spirit Guide">
-        <span class="title">SPIRIT&nbsp;GUIDE</span>
-      </h1>
+  <img class="brandmark" src="/ghost-donkey/GD-Burro-1.webp" alt="" />
+  <span class="title">SPIRIT&nbsp;GUIDE</span>
+</h1>
+<!-- Toggle -->
       <div class="toggle" role="tablist" aria-label="Mode">
         <button id="staffBtn" class="on" role="tab" aria-selected="true">Staff</button>
         <button id="guestBtn" class="off" role="tab" aria-selected="false">Guest</button>
@@ -244,6 +253,8 @@
       <div id="composer" class="inputbar">
         <div class="field">
           <input id="input" type="text" placeholder="Ask anything..." />
+          <!-- Mic button for voice input -->
+          <button id="micBtn" class="mic" title="Voice input" aria-label="Voice input">🎤</button>
         </div>
         <button id="send" class="send" title="Send" aria-label="Send">➤</button>
       </div>
@@ -262,6 +273,7 @@
     const guestBtn = document.getElementById('guestBtn');
     const staffBtn = document.getElementById('staffBtn');
     const composer = document.getElementById('composer');
+    const micBtn   = document.getElementById('micBtn');
 
     let mode = 'staff'; // 'guest' | 'staff'
 
@@ -369,6 +381,128 @@
       if(e.key === 'Enter'){ e.preventDefault(); send(); }
     });
     sendBtn.addEventListener('click', send);
+
+    // ===== Voice Input =====
+    // Flip this to true if you want to force Whisper for everything
+    const USE_WHISPER = false;
+
+    let recognition;     // Web Speech
+    let mediaStream;     // gUM stream
+    let mediaRecorder;   // MediaRecorder
+    let chunks = [];     // audio buffers
+
+    // ----- Path 1: Web Speech API (free, easy) -----
+    function setupWebSpeech(){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return false;
+
+      recognition = new SR();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.continuous = false;
+
+      recognition.onstart = () => micBtn.classList.add('listening');
+      recognition.onend   = () => micBtn.classList.remove('listening');
+
+      recognition.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        inputEl.value = text;
+        send(); // auto-send after recognition
+      };
+
+      micBtn.onclick = () => {
+        try { recognition.start(); } catch {}
+      };
+
+      return true;
+    }
+
+    // ----- Path 2: Whisper via backend (robust in noise) -----
+    async function startRecording(){
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          noiseSuppression: true,
+          echoCancellation: true,
+          autoGainControl: true,
+        }
+      });
+
+      chunks = [];
+      mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/webm' });
+
+      mediaRecorder.ondataavailable = (e)=>{ if(e.data.size) chunks.push(e.data); };
+      mediaRecorder.onstart = ()=> micBtn.classList.add('recording');
+      mediaRecorder.onstop  = async ()=>{
+        micBtn.classList.remove('recording');
+
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        chunks = [];
+
+        const base64 = await blobToBase64(blob);
+        const res = await fetch('/api/stt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ audio: base64, mime: 'audio/webm' })
+        });
+        const data = await res.json().catch(()=> ({}));
+        if (data?.text){
+          inputEl.value = data.text;
+          send(); // auto-send; change if you prefer manual send
+        } else {
+          appendAI('Couldn’t transcribe that. Try again closer to the mic.');
+        }
+
+        // stop tracks
+        mediaStream.getTracks().forEach(t => t.stop());
+        mediaStream = null;
+      };
+
+      mediaRecorder.start();
+      // safety: auto-stop after 10s
+      setTimeout(()=>{ if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 10000);
+    }
+
+    function stopRecording(){
+      if (mediaRecorder && mediaRecorder.state === 'recording'){
+        mediaRecorder.stop();
+      }
+    }
+
+    function blobToBase64(blob){
+      return new Promise((resolve, reject)=>{
+        const reader = new FileReader();
+        reader.onloadend = ()=> resolve(String(reader.result).split(',')[1] || '');
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function setupWhisper(){
+      if (!navigator.mediaDevices?.getUserMedia){
+        micBtn.style.display = 'none';
+        return false;
+      }
+      // Tap to start, tap again to stop (or auto-stop at 10s)
+      let active = false;
+      micBtn.onclick = async ()=>{
+        try{
+          if(!active){ active = true; await startRecording(); }
+          else { active = false; stopRecording(); }
+        }catch(e){
+          active = false;
+          appendAI('Microphone permission denied.');
+          console.error(e);
+        }
+      };
+      return true;
+    }
+
+    // Init voice path
+    (function initVoice(){
+      if (!USE_WHISPER && setupWebSpeech()) return;
+      setupWhisper();
+    })();
   </script>
 </body>
 </html>
