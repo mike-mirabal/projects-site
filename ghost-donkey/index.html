@@ -93,6 +93,7 @@
       padding:3px;
       gap:4px;
       background:transparent;
+      border-radius: 4px;
     }
     .toggle button{
       all:unset;
@@ -101,6 +102,7 @@
       font-weight:700;
       cursor:pointer;
       color:var(--text);
+      border-radius: 4px;
     }
     @media (max-width:560px){
       .toggle button{ padding:6px 8px; font-size:.75rem; }
@@ -128,6 +130,7 @@
       flex:1 1 auto;
       min-height:0; /* critical to allow inner scroll to size */
       border:var(--border) solid var(--accent);
+      border-radius: 4px;
       background:var(--muted);
       padding: clamp(14px, 2vw, 20px);
       overflow:hidden; /* wrapper has no scrollbars */
@@ -176,9 +179,10 @@
       flex:1 1 auto; min-width:0; /* prevents wrapping */
       display:flex; align-items:center; gap:10px;
       border:var(--border) solid var(--accent);
+      border-radius: 4px;
       background:var(--bg);
       padding:8px 10px;
-      border-radius:var(--radius);
+      
     }
     .field input{
       all:unset;
@@ -187,19 +191,51 @@
       line-height:1.2;
       color:var(--text);
     }
-
-    /* Mic button */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+    /* Mic button 
     .mic{
       all:unset;
       cursor:pointer;
       font-size:20px;
       line-height:1;
       padding:4px 6px;
-    }
+    }*/
+
+    .mic {
+  all: unset;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  height: 28px;
+  width: 28px;
+}
     .mic.listening{ color:var(--accent); }
     .mic.recording{ color:var(--teal); }
 
-    .send{
+.mic img, .send img {
+  display: block;
+  height: 24px;
+  width: 24px;
+}
+
+.send {
+  flex: 0 0 auto;
+  height: 40px;
+  width: 40px;
+  border: var(--border) solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+   /* .send{
       flex:0 0 auto;
       height:40px; width:44px;
       border:var(--border) solid var(--accent);
@@ -209,7 +245,8 @@
       cursor:pointer;
       display:grid; place-items:center;
       font-size:18px; font-weight:900;
-    }
+    } */
+
     .send:disabled{ opacity:.55; cursor:not-allowed; }
 
     .hint{
@@ -249,15 +286,24 @@
     <section class="panel" aria-label="Chat">
       <div id="chat" class="scroll" aria-live="polite" aria-relevant="additions"></div>
 
-      <!-- Input row -->
-      <div id="composer" class="inputbar">
-        <div class="field">
-          <input id="input" type="text" placeholder="Ask anything..." />
-          <!-- Mic button for voice input -->
-          <button id="micBtn" class="mic" title="Voice input" aria-label="Voice input">🎤</button>
-        </div>
-        <button id="send" class="send" title="Send" aria-label="Send">➤</button>
-      </div>
+     <!-- Input row -->
+<div id="composer" class="inputbar">
+  <div class="field">
+    <input id="input" type="text" placeholder="Ask anything..." />
+    <!-- Mic button inside field -->
+    <button id="mic" class="mic" title="Voice input" aria-label="Voice input">
+      <img src="/ghost-donkey/GD-icon-voice.svg" alt="Mic" />
+    </button>
+
+ <!-- Send button -->
+  <button id="send" class="send" title="Send" aria-label="Send">
+    <img src="/ghost-donkey/GD-icon-send.svg" alt="Send" />
+  </button>
+</div>
+
+  </div>
+ 
+
 
       <div class="hint">
         <span class="b">Staff</span> shows builds & specs • <span class="a">Guest</span> is menu & ordering.
