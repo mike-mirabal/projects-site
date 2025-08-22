@@ -5,15 +5,83 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
+    // ---------- Helpers ----------
+    const readCookies = (header = '') =>
+      Object.fromEntries(
+        String(header)
+          .split(';')
+          .map(v => v.trim())
+          .filter(Boolean)
+          .map(v => {
+            const i = v.indexOf('=');
+            return i === -1 ? [v, ''] : [v.slice(0, i), decodeURIComponent(v.slice(i + 1))];
+          })
+      );
+
+    const setLastCocktailCookie = (name) => {
+      if (!name) return;
+      // Short-lived, path=/, lax
+      res.setHeader(
+        'Set-Cookie',
+        `gd_last_cocktail=${encodeURIComponent(name)}; Max-Age=900; Path=/; SameSite=Lax`
+      );
+    };
+
+    const isAffirmative = (s = '') => {
+      const t = String(s).trim().toLowerCase();
+      return (
+        t === 'yes' ||
+        t === 'y' ||
+        t === 'yeah' ||
+        t === 'yep' ||
+        t === 'sure' ||
+        t === 'ok' ||
+        t === 'okay' ||
+        /^yes[.!]?$/i.test(s) ||
+        /^show (me )?(it|the single|single)/i.test(s) ||
+        /^let'?s see/i.test(s)
+      );
+    };
+
+    const esc = (s) =>
+      String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // HTML renderers (no markdown)
+    const renderStaffBlock = (name, price, lines, glass, garnish) => {
+      return `
+<div class="gd-card">
+  <div class="gd-title"><strong class="accent-teal">${esc(name)}</strong>${price ? ` <span class="price">(${esc(price)})</span>` : ''}</div>
+  <ul class="gd-build">
+    ${lines.map(li => `<li>${esc(li)}</li>`).join('')}
+  </ul>
+  ${glass ? `<div><strong>Glass:</strong> ${esc(glass)}</div>` : ''}
+  ${garnish ? `<div><strong>Garnish:</strong> ${esc(garnish)}</div>` : ''}
+</div>`.trim();
+    };
+
+    const renderGuestBlock = (name, price, desc, ing) => {
+      return `
+<div class="gd-card">
+  <div class="gd-title"><strong class="accent-teal">${esc(name)}</strong>${price ? ` <span class="price">(${esc(price)})</span>` : ''}</div>
+  ${desc ? `<p>${esc(desc)}</p>` : ''}
+  ${ing ? `<div><strong>Ingredients:</strong> ${esc(ing)}</div>` : ''}
+</div>`.trim();
+    };
+
+    // ---------- Parse request ----------
     const body = req.body || {};
     const queryRaw = body.query;
-    const mode = (body.mode === 'staff') ? 'staff' : 'guest';
-
+    const mode = body.mode === 'guest' ? 'guest' : 'staff'; // default staff
     if (!queryRaw || !String(queryRaw).trim()) {
       return res.status(400).json({ error: 'Missing query' });
     }
+    const query = String(queryRaw).trim();
+    const q = query.toLowerCase();
 
-    // Load menu JSON from env (safe parse)
+    // ---------- Load menu JSON ----------
     let menu = {};
     try {
       menu = JSON.parse(process.env.MENU_JSON || '{}');
@@ -21,33 +89,28 @@ export default async function handler(req, res) {
       menu = {};
     }
 
-    const query = String(queryRaw).trim();
-    const q = query.toLowerCase();
-
-    // ---------- Utils ----------
+    // ---------- Utilities for menu ----------
     const normalize = (s) => String(s).toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim();
     const stringifyGarnish = (g) => Array.isArray(g) ? g.join(', ') : (g || '');
-    const priceLine = (price) => price ? ` (${price})` : '';
 
-    const esc = (str) =>
-      String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    const toLines = (arr) => {
+      if (!Array.isArray(arr)) return [];
+      // Keep exact order/quantities as provided
+      return arr.map(x => String(x));
+    };
 
-    // Turns "Sweet, Smoky, Creamy, Tart" -> sentence for guest mode
-    function characterToSentence(charStr) {
+    // Character -> short description
+    function characterToLine(charStr) {
       if (!charStr) return null;
       const parts = String(charStr).split(/[,•]/).map(s => s.trim()).filter(Boolean);
       if (!parts.length) return null;
-      if (parts.length === 1) return `A ${parts[0].toLowerCase()} crowd‑pleaser.`;
+      if (parts.length === 1) return `A ${parts[0].toLowerCase()} crowd-pleaser.`;
       const last = parts.pop();
-      return `${parts.map(p => p.toLowerCase()).join(', ')} with a ${String(last).toLowerCase()} finish.`;
+      return `${parts.map(p => p.toLowerCase()).join(', ')} with a ${last.toLowerCase()} finish.`;
     }
 
-    // Simple upsell line (customize per cocktail if you like)
     function upsellFor(name) {
-      const n = name.toLowerCase();
+      const n = String(name).toLowerCase();
       if (n.includes('highland picnic')) {
         return `Pairs nicely with our chicken tinga tacos — just $2.75 each during happy hour until 8pm!`;
       }
@@ -55,150 +118,141 @@ export default async function handler(req, res) {
         return `Great with chips & queso — and don’t miss happy hour pricing until 8pm!`;
       }
       if (n.includes('carajillo') || n.includes('espresso')) {
-        return `Try it with our churro bites for a dessert‑worthy combo.`;
+        return `Try it with our churro bites for a dessert-worthy combo.`;
       }
       return `This would go great with our chicken tinga tacos — $2.75 each on happy hour until 8pm!`;
     }
 
-    // Build a quiz bubble for staff (plain text)
-    function quizFor(name, item) {
-      const choices = [];
-      if (item.glass) choices.push(`Quick check: what’s the glass for ${name}?`);
-      if (item.garnish) choices.push(`Pop quiz: name one garnish on ${name}.`);
-      const single = Array.isArray(item.build?.singleBuild) ? item.build.singleBuild
-                    : Array.isArray(item.recipe) ? item.recipe
-                    : Array.isArray(item.build) ? item.build
-                    : null;
-      if (Array.isArray(single) && single.length) {
-        choices.push(`Recall: what’s the first ingredient in ${name}?`);
-      } else if (Array.isArray(item.ingredients) && item.ingredients.length) {
-        choices.push(`Recall: name two ingredients in ${name}.`);
-      }
-      if (!choices.length) choices.push(`Want a quick flashcard on ${name}?`);
-      return choices[Math.floor(Math.random() * choices.length)];
+    // ---------- Cookie context ----------
+    const cookies = readCookies(req.headers.cookie || '');
+    const lastCocktailCookie = cookies['gd_last_cocktail'];
+
+    // ---------- Direct match finder ----------
+    const keys = Object.keys(menu || {});
+    const findCocktailKey = (needleLower) =>
+      keys.find(k => needleLower.includes(normalize(k))) ||
+      keys.find(k => normalize(k).includes(needleLower));
+
+    let matchKey = findCocktailKey(q);
+
+    // If staff mode and user said "yes", try cookie
+    if (mode === 'staff' && !matchKey && isAffirmative(q) && lastCocktailCookie) {
+      matchKey = lastCocktailCookie;
     }
 
-    // ---------- HTML formatters ----------
-    function formatStaffHTML(name, item) {
-      // Prefer batch build; support top-level batchBuild or build.batchBuild
-      const batch = Array.isArray(item.batchBuild) ? item.batchBuild
-                   : Array.isArray(item.build?.batchBuild) ? item.build.batchBuild
-                   : null;
-      // Fallback to single (support build.singleBuild, recipe, or build array)
-      const single = Array.isArray(item.build?.singleBuild) ? item.build.singleBuild
-                    : Array.isArray(item.recipe) ? item.recipe
-                    : Array.isArray(item.build) ? item.build
-                    : null;
+    // If they wrote "single build for <name>" try to extract name
+    if (!matchKey && /^single\b|^show single/i.test(query)) {
+      const nameGuess = query.replace(/^(single|show single|show the single|single build (for|of))\s*/i, '').trim();
+      if (nameGuess) matchKey = findCocktailKey(nameGuess.toLowerCase());
+    }
+
+    // ---------- If we have a match in JSON ----------
+    if (matchKey && menu[matchKey]) {
+      const item = menu[matchKey] || {};
+      const price = item.price || '';
+      const glass = item.glass || '';
+      const garnish = stringifyGarnish(item.garnish);
+
+      // Resolve batch vs single arrays (your JSON uses top-level build/batchBuild)
+      const batchBuild = Array.isArray(item.batchBuild) ? item.batchBuild : null;
+      const singleBuild = Array.isArray(item.build) ? item.build : null;
       const ingredients = Array.isArray(item.ingredients) ? item.ingredients : null;
 
-      const lines = (batch && batch.length) ? batch
-                  : (single && single.length) ? single
-                  : (ingredients || []);
+      let firstBlockHTML = '';
+      let secondBubbleHTML = '';
 
-      const glass = item.glass ? `<div><strong>Glass:</strong> ${esc(item.glass)}</div>` : '';
-      const garnish = item.garnish ? `<div><strong>Garnish:</strong> ${esc(stringifyGarnish(item.garnish))}</div>` : '';
-
-      return `
-<div class="gd-item">
-  <div class="gd-title"><span class="accent-teal"><strong>${esc(name)}</strong></span>${priceLine(item.price)}</div>
-  ${lines && lines.length ? `<ul class="gd-bullets">${lines.map(li => `<li>${esc(li)}</li>`).join('')}</ul>` : ''}
-  ${glass}${garnish}
-</div>`.trim();
-    }
-
-    function formatGuestHTML(name, item) {
-      const price = priceLine(item.price);
-      const desc = characterToSentence(item.character) ||
-                   (Array.isArray(item.ingredients) && item.ingredients.length
-                      ? `Bright, balanced, and easy to love.`
-                      : `A house favorite with great balance.`);
-      const ing = (Array.isArray(item.ingredients) && item.ingredients.length)
-        ? `Ingredients: ${esc(item.ingredients.join(', '))}` : '';
-
-      return `
-<div class="gd-item">
-  <div class="gd-title"><span class="accent-teal"><strong>${esc(name)}</strong></span>${price}</div>
-  <div class="gd-desc" style="margin-top:.25rem;">${esc(desc)}</div>
-  ${ing ? `<div class="gd-ings" style="margin-top:.4rem;">${ing}</div>` : ``}
-</div>`.trim();
-    }
-
-    // ---------- Build bubbles for menu item ----------
-    function bubblesForItem(name, item, mode) {
       if (mode === 'staff') {
-        const html = formatStaffHTML(name, item);
-        const follow = `Do you want to see the single cocktail build without batch?`;
-        return [html, esc(follow)];
+        // Decide whether showing single build (affirmative) or batch build by default
+        const showSingle =
+          isAffirmative(q) && (!!singleBuild && singleBuild.length) && lastCocktailCookie === matchKey;
+
+        if (showSingle && singleBuild && singleBuild.length) {
+          // Single build
+          firstBlockHTML = renderStaffBlock(matchKey, price, toLines(singleBuild), glass, garnish);
+          secondBubbleHTML = `<div>Need the batch build again, or want a quick quiz?</div>`;
+        } else {
+          // Default: Batch first if available; else single; else ingredients
+          if (batchBuild && batchBuild.length) {
+            firstBlockHTML = renderStaffBlock(matchKey, price, toLines(batchBuild), glass, garnish);
+            secondBubbleHTML = `<div>Do you want to see the single cocktail build without batch?</div>`;
+          } else if (singleBuild && singleBuild.length) {
+            firstBlockHTML = renderStaffBlock(matchKey, price, toLines(singleBuild), glass, garnish);
+            secondBubbleHTML = `<div>Want a quick quiz on this build, or see similar cocktails?</div>`;
+          } else if (ingredients && ingredients.length) {
+            firstBlockHTML = renderStaffBlock(matchKey, price, toLines(ingredients), glass, garnish);
+            secondBubbleHTML = `<div>Want the full measured build?</div>`;
+          } else {
+            firstBlockHTML = `<div>Sorry, I don't have this answer yet. I'm still learning...</div>`;
+          }
+        }
       } else {
-        const html = formatGuestHTML(name, item);
-        const upsell = upsellFor(name);
-        return [html, esc(upsell)];
+        // Guest mode: description + ingredients + upsell
+        const desc =
+          characterToLine(item.character) ||
+          (ingredients && ingredients.length
+            ? `Bright, balanced, and easy to love.`
+            : `A house favorite with great balance.`);
+        const ing = ingredients && ingredients.length ? ingredients.join(', ') : '';
+        firstBlockHTML = renderGuestBlock(matchKey, price, desc, ing);
+        secondBubbleHTML = `<div>${esc(upsellFor(matchKey))}</div>`;
       }
+
+      // remember last cocktail so "yes" works next turn
+      setLastCocktailCookie(matchKey);
+
+      const bubbles = [firstBlockHTML];
+      if (secondBubbleHTML) bubbles.push(secondBubbleHTML);
+      return res.status(200).json({ bubbles, answer: bubbles.join('\n\n') });
     }
 
-    // ---------- Exact match from MENU_JSON ----------
-    const keys = Object.keys(menu || {});
-    let matchKey =
-      keys.find((k) => q.includes(normalize(k))) ||
-      keys.find((k) => normalize(k).includes(q));
-
-    if (matchKey) {
-      const item = menu[matchKey] || {};
-      const bubbles = bubblesForItem(matchKey, item, mode);
-      // Return HTML bubbles
-      return res.status(200).json({
-        bubbles,
-        answer: bubbles.join('\n\n')
-      });
-    }
-
-    // ---------- LLM fallback (ask model to return HTML bubbles) ----------
+    // ---------- No direct match: try model as a fallback ----------
+    // Build concise directives that still ask the model to return HTML bubbles.
     const staffDirectives = `
 You are Ghost Donkey Spirit Guide (STAFF mode).
-When a cocktail name is given, return ONLY two chat bubbles as HTML (not markdown):
-Bubble 1 (HTML):
-  - Title line: <div class="gd-title"><span class="accent-teal"><strong>NAME</strong></span> (PRICE)</div>
-  - Then an unordered list <ul class="gd-bullets"> with one <li> per line of the build.
-    • Use ONLY the BATCH build if available; if not, use the SINGLE recipe.
-  - After the list, add:
-    <div><strong>Glass:</strong> ...</div>
-    <div><strong>Garnish:</strong> ...</div>
-Bubble 2 (plain text):
-  "Do you want to see the single cocktail build without batch?"
 
-Formatting rules:
-- Return HTML (no markdown). Use <ul><li> for bullets.
-- Keep it concise and scannable.
-`.trim();
+If the user provides a cocktail name, return EXACTLY two HTML "bubbles" (strings):
+  Bubble 1 (HTML):
+    <div class="gd-card">
+      <div class="gd-title"><strong class="accent-teal">Name</strong> (Price)</div>
+      <ul class="gd-build">
+        <li>…measured build line…</li>
+        <li>…</li>
+      </ul>
+      <div><strong>Glass:</strong> …</div>
+      <div><strong>Garnish:</strong> …</div>
+    </div>
+  • Default to the batch build if it exists; otherwise show the single cocktail build. Use exact quantities if present.
+  Bubble 2 (HTML):
+    <div>Do you want to see the single cocktail build without batch?</div>
+
+Never use markdown; return HTML only. Keep it concise and scannable.
+`;
 
     const guestDirectives = `
 You are Ghost Donkey Spirit Guide (GUEST mode).
-Return ONLY two chat bubbles:
-Bubble 1 (HTML):
-  - Title line: <div class="gd-title"><span class="accent-teal"><strong>Name</strong></span> (PRICE)</div>
-  - Blank line (or spacing via separate <div>).
-  - One short enticing description crafted from tasting notes/character (one sentence) inside a <div>.
-  - Blank line.
-  - Then "Ingredients: ..." inside a <div>, concise comma-separated list.
-Bubble 2 (plain text):
-  - An upsell/pairing recommendation (e.g., tacos + happy hour note).
 
-Rules:
-- Do NOT reveal detailed build/spec lines in guest mode.
-- Return HTML (no markdown) for bubble 1.
-`.trim();
+Return EXACTLY two HTML "bubbles":
+  Bubble 1 (HTML):
+    <div class="gd-card">
+      <div class="gd-title"><strong class="accent-teal">Name</strong> (Price)</div>
+      <p>Short enticing description derived from tasting notes.</p>
+      <div><strong>Ingredients:</strong> item1, item2, …</div>
+    </div>
+  Bubble 2 (HTML):
+    <div>Concrete upsell/pairing (e.g., tacos/happy hour) in one sentence.</div>
+
+Never use markdown; return HTML only.
+`;
 
     const systemPrompt = `
-You have a structured JSON knowledge base with cocktails and fields like ingredients, build.batchBuild, build.singleBuild, glass, garnish, character, price.
+You have a structured JSON knowledge base with cocktails and fields like ingredients, build (single), batchBuild (batch), glass, garnish, character, price.
 
 Follow the correct mode strictly.
 
 ${mode === 'staff' ? staffDirectives : guestDirectives}
 
-IMPORTANT OUTPUT CONTRACT:
-- Return a JSON object: { "bubbles": [ "<html for bubble 1>", "plain text for bubble 2" ] }
-- Bubble 1 must be HTML (no markdown). Bubble 2 is short plain text.
-- NEVER include the entire knowledge JSON.
+NEVER include the entire JSON. Output MUST be JSON ONLY if explicitly asked; otherwise return plain text containing ONLY the two HTML strings separated in JSON-like structure:
+{ "bubbles": ["<div>...</div>", "<div>...</div>"] }
 
 Knowledge base (internal reference only):
 ${process.env.MENU_JSON || "{}"}
@@ -221,17 +275,16 @@ ${process.env.MENU_JSON || "{}"}
     });
 
     if (!r.ok) {
-      const text = await r.text().catch(() => '');
-      return res.status(502).json({
-        error: 'OpenAI error',
-        status: r.status,
-        detail: text.slice(0, 400)
+      // Graceful generic fallback
+      return res.status(200).json({
+        bubbles: [`<div>Sorry, I don't have this answer yet. I'm still learning...</div>`],
+        answer: `Sorry, I don't have this answer yet. I'm still learning...`
       });
     }
 
     const data = await r.json();
 
-    // Try to extract a JSON object with { bubbles: [...] } from the model output
+    // Extract bubbles (prefer JSON, fall back to splitting)
     let bubbles = null;
     try {
       const content = data?.choices?.[0]?.message?.content || '';
@@ -243,14 +296,13 @@ ${process.env.MENU_JSON || "{}"}
         }
       }
       if (!bubbles) {
-        // If the model returned plain text, split into up to 2 bubbles by double newlines
-        const plain = (data?.choices?.[0]?.message?.content || 'No answer.').trim();
+        // If we only got plain text, try to split into 2 HTML blocks by double newlines
+        const plain = (data?.choices?.[0]?.message?.content || '').trim();
         const split = plain.split(/\n\s*\n/).slice(0, 2);
-        bubbles = split.length ? split : [plain];
+        bubbles = split.length ? split : [`<div>Sorry, I don't have this answer yet. I'm still learning...</div>`];
       }
     } catch {
-      const fallback = (data?.choices?.[0]?.message?.content || 'No answer.').trim();
-      bubbles = [fallback];
+      bubbles = [`<div>Sorry, I don't have this answer yet. I'm still learning...</div>`];
     }
 
     return res.status(200).json({
@@ -258,6 +310,9 @@ ${process.env.MENU_JSON || "{}"}
       answer: bubbles.join('\n\n')
     });
   } catch (e) {
-    return res.status(500).json({ error: 'Server error', detail: String(e).slice(0, 400) });
+    return res.status(500).json({
+      error: 'Server error',
+      detail: String(e).slice(0, 400)
+    });
   }
 }
