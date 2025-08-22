@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <title>GHOST DONKEY Spirit Guide</title>
+  <title>Spirit Guide</title>
   <style>
     :root{
       --bg:#f9e7e7;
@@ -70,22 +70,25 @@
     @media (max-width: 768px) {
       .brand{ font-size: 1.2rem; }
     }
-    .brand .gd{
+
+    /* Single-word title styled like the old "Ghost Donkey" treatment */
+    .brand .title{
       font-weight:900;
       color:var(--teal);
-      text-shadow: 2px 0 var(--accent), -2px 0 var(--accent), 0 2px var(--accent), 0 -2px var(--accent);
+      text-shadow:
+        2px 0 var(--accent),
+        -2px 0 var(--accent),
+        0 2px var(--accent),
+        0 -2px var(--accent);
+      letter-spacing: .5px;
     }
-    .brand .sg{
-      color:var(--accent);
-      font-weight:600;
-    }
-    /* stack title on narrow screens while keeping toggle on the right */
     @media (max-width:768px){
-      .brand{ display:block; }
-      .brand .line{ display:block; }
-      .brand .gd{
-        font-weight:600;
-        text-shadow: 1px 0 var(--accent), -1px 0 var(--accent), 0 1px var(--accent), 0 -1px var(--accent);
+      .brand .title{
+        text-shadow:
+          1px 0 var(--accent),
+          -1px 0 var(--accent),
+          0 1px var(--accent),
+          0 -1px var(--accent);
       }
     }
 
@@ -93,7 +96,6 @@
     .toggle{
       display:inline-flex;
       border:var(--border) solid var(--accent);
-      /* border-radius:999px; */
       padding:3px;
       gap:4px;
       background:transparent;
@@ -103,7 +105,6 @@
       padding:8px 12px;
       font-size:.75rem;
       font-weight:700;
-      /* border-radius:999px; */
       cursor:pointer;
       color:var(--text);
     }
@@ -113,8 +114,7 @@
     .toggle .on{ background:var(--teal); color:#fff; }
     .toggle .off{ background:transparent; color:var(--accent); }
 
-    .accent-strong{ color:var(--teal); font-weight:800; }
-
+    .accent-strong{ color:var(--accent); font-weight:800; }
 
     /* ===== Divider ===== */
     .divider{
@@ -174,6 +174,8 @@
       display:flex;
       gap:10px;
       align-items:center;
+      background:var(--bg); /* ensure solid behind inputs on iOS */
+      padding-bottom: env(safe-area-inset-bottom, 0);
     }
     .inputbar .field{
       flex:1 1 auto; min-width:0; /* prevents wrapping */
@@ -222,14 +224,13 @@
   <div class="app">
     <!-- Top bar -->
     <div class="topbar">
-      <h1 class="brand" aria-label="GHOST DONKEY Spirit Guide">
-        <span class="line gd">GHOST DONKEY</span>
-        <span class="line sg">Spirit Guide</span>
+      <h1 class="brand" aria-label="Spirit Guide">
+        <span class="title">SPIRIT&nbsp;GUIDE</span>
       </h1>
-     <div class="toggle" role="tablist" aria-label="Mode">
+      <div class="toggle" role="tablist" aria-label="Mode">
         <button id="staffBtn" class="on" role="tab" aria-selected="true">Staff</button>
         <button id="guestBtn" class="off" role="tab" aria-selected="false">Guest</button>
-     </div>
+      </div>
     </div>
 
     <!-- Floral divider -->
@@ -254,120 +255,120 @@
   </div>
 
   <script>
-  // Elements
-  const chatEl   = document.getElementById('chat');
-  const inputEl  = document.getElementById('input');
-  const sendBtn  = document.getElementById('send');
-  const guestBtn = document.getElementById('guestBtn');
-  const staffBtn = document.getElementById('staffBtn');
-  const composer = document.getElementById('composer');
+    // Elements
+    const chatEl   = document.getElementById('chat');
+    const inputEl  = document.getElementById('input');
+    const sendBtn  = document.getElementById('send');
+    const guestBtn = document.getElementById('guestBtn');
+    const staffBtn = document.getElementById('staffBtn');
+    const composer = document.getElementById('composer');
 
-  let mode = 'staff'; // 'guest' | 'staff'
+    let mode = 'staff'; // 'guest' | 'staff'
 
-  function appendAI(text){
-    const div = document.createElement('div');
-    div.className = 'msg ai';
-    // accent **bold** phrases
-    div.innerHTML = (text || '').replace(/\*\*(.+?)\*\*/g, '<span class="accent-teal">$1</span>');
-    chatEl.appendChild(div);
-    chatEl.scrollTop = chatEl.scrollHeight;
-  }
-  function appendUser(text){
-    const div = document.createElement('div');
-    div.className = 'msg user';
-    div.textContent = text;
-    chatEl.appendChild(div);
-    chatEl.scrollTop = chatEl.scrollHeight;
-  }
-
-  function setMode(next){
-    mode = next;
-    const isGuest = mode === 'guest';
-
-    // Toggle UI state
-    staffBtn.className = isGuest ? 'off' : 'on';
-    guestBtn.className = isGuest ? 'on' : 'off';
-    staffBtn.setAttribute('aria-selected', String(!isGuest));
-    guestBtn.setAttribute('aria-selected', String(isGuest));
-
-    // Reset chat and show mode banner message (no greeting line)
-    chatEl.innerHTML = '';
-    const banner = isGuest
-      ? `<span class="accent-strong">GUEST MODE</span>: Get more information about the menu, ingredients, and prices.`
-      : `<span class="accent-strong">STAFF MODE</span>: Ask for Recipes, Get Info, or Test your knowledge.`;
-    appendAI(banner);
-  }
-
-  staffBtn.onclick = () => setMode('staff');
-  guestBtn.onclick = () => setMode('guest');
-
-  async function send(){
-    const text = (inputEl.value || '').trim();
-    if(!text) return;
-    appendUser(text);
-    inputEl.value = '';
-    sendBtn.disabled = true;
-    try{
-      const res = await fetch('/api/chat', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ query: text, mode })
-      });
-      if(!res.ok){
-        const t = await res.text().catch(()=> '');
-        appendAI(`A server error occurred (${res.status}).`);
-        console.error('API error', res.status, t);
-        return;
-      }
-      const data = await res.json();
-      if (Array.isArray(data.bubbles)) {
-        data.bubbles.forEach(b => appendAI(String(b)));
-      } else {
-        appendAI(data.answer || 'No answer.');
-      }
-    }catch(err){
-      console.error(err);
-      appendAI('Network error. Try again.');
-    }finally{
-      sendBtn.disabled = false;
-      inputEl.focus();
+    function appendAI(text){
+      const div = document.createElement('div');
+      div.className = 'msg ai';
+      // accent **bold** phrases
+      div.innerHTML = (text || '').replace(/\*\*(.+?)\*\*/g, '<span class="accent-teal">$1</span>');
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
     }
-  }
+    function appendUser(text){
+      const div = document.createElement('div');
+      div.className = 'msg user';
+      div.textContent = text;
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
 
-  // Enter to send
-  inputEl.addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter'){ e.preventDefault(); send(); }
-  });
-  sendBtn.addEventListener('click', send);
+    function setMode(next){
+      mode = next;
+      const isGuest = mode === 'guest';
 
-  // ===== Visual Viewport handling =====
-  function setAppHeight(){
-    const h = (window.visualViewport && window.visualViewport.height)
-      ? window.visualViewport.height
-      : window.innerHeight;
-    document.documentElement.style.setProperty('--app-h', `${Math.round(h)}px`);
-  }
-  function setComposerHeight(){
-    const h = composer ? composer.getBoundingClientRect().height : 88;
-    document.documentElement.style.setProperty('--composer-h', `${Math.ceil(h)}px`);
-  }
-  function syncHeights(){
-    setAppHeight();
-    setComposerHeight();
-  }
-  window.addEventListener('resize', syncHeights);
-  window.addEventListener('orientationchange', syncHeights);
-  if (window.visualViewport){
-    window.visualViewport.addEventListener('resize', syncHeights);
-    window.visualViewport.addEventListener('scroll', syncHeights);
-  }
+      // Toggle UI state
+      staffBtn.className = isGuest ? 'off' : 'on';
+      guestBtn.className = isGuest ? 'on' : 'off';
+      staffBtn.setAttribute('aria-selected', !isGuest);
+      guestBtn.setAttribute('aria-selected', isGuest);
 
-  // ---- First load (STAFF by default) ----
-  setMode('staff');   // << keep this
-  syncHeights();
-  setTimeout(syncHeights, 150);
-  setTimeout(syncHeights, 600);
-</script>
+      // Reset chat and show mode banner message
+      chatEl.innerHTML = '';
+      const banner = isGuest
+        ? `<span class="accent-strong">GUEST MODE</span>: Get more information about the menu, ingredients, and prices.`
+        : `<span class="accent-strong">STAFF MODE</span>: Ask for Recipes, Get Info, or Test your knowledge.`;
+      appendAI(banner);
+    }
 
+    staffBtn.onclick = () => setMode('staff');
+    guestBtn.onclick = () => setMode('guest');
+
+    // ===== Visual Viewport handling =====
+    function setAppHeight(){
+      const h = (window.visualViewport && window.visualViewport.height)
+        ? window.visualViewport.height
+        : window.innerHeight;
+      document.documentElement.style.setProperty('--app-h', `${Math.round(h)}px`);
+    }
+    function setComposerHeight(){
+      const h = composer ? composer.getBoundingClientRect().height : 88;
+      document.documentElement.style.setProperty('--composer-h', `${Math.ceil(h)}px`);
+    }
+    function syncHeights(){
+      setAppHeight();
+      setComposerHeight();
+    }
+    window.addEventListener('resize', syncHeights);
+    window.addEventListener('orientationchange', syncHeights);
+    if (window.visualViewport){
+      window.visualViewport.addEventListener('resize', syncHeights);
+      window.visualViewport.addEventListener('scroll', syncHeights);
+    }
+
+    // First load -> Staff by default (only call once)
+    setMode('staff');
+    syncHeights();
+    setTimeout(syncHeights, 150);
+    setTimeout(syncHeights, 600);
+
+    // Send handler
+    async function send(){
+      const text = (inputEl.value || '').trim();
+      if(!text) return;
+      appendUser(text);
+      inputEl.value = '';
+      sendBtn.disabled = true;
+      try{
+        const res = await fetch('/api/chat', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ query: text, mode })
+        });
+        if(!res.ok){
+          const t = await res.text().catch(()=> '');
+          appendAI(`A server error occurred (${res.status}).`);
+          console.error('API error', res.status, t);
+          return;
+        }
+        const data = await res.json();
+        if (Array.isArray(data.bubbles)) {
+          data.bubbles.forEach(b => appendAI(String(b)));
+        } else {
+          appendAI(data.answer || 'No answer.');
+        }
+      }catch(err){
+        console.error(err);
+        appendAI('Network error. Try again.');
+      }finally{
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    // Enter to send
+    inputEl.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ e.preventDefault(); send(); }
+    });
+    sendBtn.addEventListener('click', send);
+  </script>
 </body>
 </html>
