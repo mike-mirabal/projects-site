@@ -410,7 +410,7 @@ COCKTAILS:
 SPIRITS (IMPORTANT — NO BULLETS):
 - Return ONLY two bubbles:
 Bubble 1:
-  <span class="accent-teal">NAME</span> (PRICE)
+  <span class="accent-teal-medium">NAME</span> (PRICE)
   <span class="accent-medium">Type & Category:</span> ...
   <span class="accent-medium">Agave Variety / Base Ingredient:</span> ...
   <span class="accent-medium">Region & Distillery:</span> ...
@@ -437,7 +437,7 @@ COCKTAILS:
     An upsell/pairing recommendation. You may use <br>.
 
 SPIRITS (IMPORTANT — NO BULLETS):
-- Same single-bubble format as staff (labels in orange bold, one field per line, no bullets).
+- Same format as staff (labels in orange bold, one field per line, no bullets).
 `.trim();
 
     const systemPrompt = `

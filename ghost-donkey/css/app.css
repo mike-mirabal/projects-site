@@ -105,7 +105,7 @@ html,body{
 
 .accent-strong{ color:var(--accent); font-weight:800; }
 .accent-medium{ color:var(--accent); font-weight:600; }
-
+.accent-teal-medium{ color:var(--teal); font-weight:600; }
 
 /* ===== Divider ===== */
 .divider{
