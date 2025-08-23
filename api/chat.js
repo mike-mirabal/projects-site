@@ -1,14 +1,11 @@
 // /api/chat.js
 //
 // Chat backend for Spirit Guide
-// - Reads cocktails from process.env.COCKTAILS_JSON
-// - Reads spirits   from process.env.SPIRITS_JSON
-// - Staff mode defaults to showing BATCH build; follows up with a single-build prompt
-// - Remembers last item per-session (very lightweight, in-memory) so replies like “yes” work
-// - Spirits output: name (bold, accent) + (price) on first line, then one bullet per data point
-//
-// NOTE: This server keeps a tiny in-memory state keyed by a best-effort session key
-//       (x-session-id header if provided, otherwise IP+UA). It resets automatically.
+// - Prefers cocktails/spirits passed in req.body (from your front-end); falls back to env
+// - Robust matching for spirits (supports object or array JSON, name/displayName/brand/aliases)
+// - Staff: default to batch build; follow-up asks for single build
+// - Remembers last item (session-lite) so “yes” works
+// - Spirits output: NAME (accent + price) then one bullet per data point line (HTML only)
 
 export default async function handler(req, res) {
   try {
@@ -24,29 +21,36 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing query' });
     }
     const query = String(queryRaw).trim();
-    const q = query.toLowerCase();
 
-    // ===== Load knowledge from env =====
-    // COCKTAILS_JSON replaced MENU_JSON per user request
+    // ===== Load knowledge (body first; env fallback) =====
     let cocktails = {};
-    let spirits = {};
-    try { cocktails = JSON.parse(process.env.COCKTAILS_JSON || '{}'); } catch { cocktails = {}; }
-    try { spirits   = JSON.parse(process.env.SPIRITS_JSON   || '{}'); } catch { spirits   = {}; }
+    let spirits   = {};
 
-    // ===== Lightweight session memory (per user) =====
-    //  - If you can, send 'x-session-id' from the client; otherwise we use IP+UA.
+    // Prefer client-provided payloads (from /public/app.js or similar)
+    if (body.cocktails && (Array.isArray(body.cocktails) || typeof body.cocktails === 'object')) {
+      cocktails = body.cocktails;
+    } else {
+      try { cocktails = JSON.parse(process.env.COCKTAILS_JSON || '{}'); } catch { cocktails = {}; }
+    }
+
+    if (body.spirits && (Array.isArray(body.spirits) || typeof body.spirits === 'object')) {
+      spirits = body.spirits;
+    } else {
+      try { spirits = JSON.parse(process.env.SPIRITS_JSON || '{}'); } catch { spirits = {}; }
+    }
+
+    // ===== Tiny per-session memory =====
     const now = Date.now();
     const sessionKey =
       (req.headers['x-session-id'] && String(req.headers['x-session-id'])) ||
       `${req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'na'} :: ${req.headers['user-agent'] || 'ua'}`;
 
-    // Simple in-memory store with TTL
-    // Structure: { [sessionKey]: { lastItemName, lastItemType, lastMode, askedSingle, askedQuiz, at } }
     if (!global.__SG_STATE__) global.__SG_STATE__ = new Map();
     const state = global.__SG_STATE__;
-    // cleanup occasionally
+
+    // occasional cleanup (20 min TTL)
     if (Math.random() < 0.02) {
-      const TTL = 1000 * 60 * 20; // 20 minutes
+      const TTL = 1000 * 60 * 20;
       for (const [k, v] of state.entries()) {
         if (!v || (now - (v.at || 0)) > TTL) state.delete(k);
       }
@@ -55,7 +59,7 @@ export default async function handler(req, res) {
     sess.at = now;
     state.set(sessionKey, sess);
 
-    // ===== Utilities =====
+    // ===== Utils =====
     const normalize = (s) => String(s || '')
       .toLowerCase()
       .replace(/[\u2019']/g, '')              // apostrophes
@@ -72,10 +76,93 @@ export default async function handler(req, res) {
     const priceLine = (price) => price ? ` (${escapeHTML(price)})` : '';
 
     const joinLines = (lines) => lines.filter(Boolean).join('<br>');
-
-    // prefer arrays across possible shapes
     const asArray = (v) => Array.isArray(v) ? v.slice() : (v ? [v] : []);
 
+    const qNorm = normalize(query);
+
+    // ===== Normalize cocktails as a name->item map =====
+    function toMap(data, opts = {}) {
+      // supports object map { name: {...} } OR array [{name, ...}]
+      const out = {};
+      if (!data) return out;
+
+      if (Array.isArray(data)) {
+        data.forEach((item) => {
+          if (!item) return;
+          const name = item.name || item.displayName || item.title;
+          if (name) out[String(name)] = item;
+        });
+      } else if (typeof data === 'object') {
+        // already a map
+        Object.keys(data).forEach((k) => {
+          out[String(k)] = data[k];
+        });
+      }
+      return out;
+    }
+
+    const cocktailsMap = toMap(cocktails);
+    const spiritsMap   = toMap(spirits);
+
+    // ===== Build a flexible search index (esp. for spirits) =====
+    function buildIndex(map, kind) {
+      // returns [{key, item, hay}], where hay is a single normalized string containing
+      // name + displayName + brand + aliases + alt spellings, etc.
+      const idx = [];
+      for (const key of Object.keys(map)) {
+        const item = map[key] || {};
+        const bits = [
+          key,
+          item.name,
+          item.displayName,
+          item.brand,
+          ...(asArray(item.aliases)),
+        ]
+          .filter(Boolean)
+          .map(normalize);
+
+        // Also include some helpful fields to catch queries like “Terralta Reposado”
+        if (kind === 'spirit') {
+          bits.push(normalize(item.type));
+          bits.push(normalize(item.category));
+          bits.push(normalize(item.agave));
+          bits.push(normalize(item.region));
+          bits.push(normalize(item.distillery));
+        }
+
+        const hay = normalize(bits.filter(Boolean).join(' '));
+        idx.push({ key, item, hay });
+      }
+      return idx;
+    }
+
+    const cocktailsIdx = buildIndex(cocktailsMap, 'cocktail');
+    const spiritsIdx   = buildIndex(spiritsMap, 'spirit');
+
+    function findBest(idx) {
+      if (!idx.length || !qNorm) return null;
+
+      // exact-ish contains
+      let hit = idx.find(({ key }) => qNorm.includes(normalize(key))) ||
+                idx.find(({ key }) => normalize(key).includes(qNorm));
+      if (hit) return hit;
+
+      // haystack contains
+      hit = idx.find(({ hay }) => hay && hay.includes(qNorm));
+      if (hit) return hit;
+
+      // word-wise overlap heuristic
+      const words = qNorm.split(' ').filter(Boolean);
+      let best = null;
+      let bestScore = 0;
+      for (const row of idx) {
+        const score = words.reduce((acc, w) => acc + (row.hay?.includes(w) ? 1 : 0), 0);
+        if (score > bestScore) { bestScore = score; best = row; }
+      }
+      return bestScore > 0 ? best : null;
+    }
+
+    // ===== Cocktail helpers =====
     const getBatchBuild = (item) =>
       Array.isArray(item?.batchBuild) ? item.batchBuild :
       Array.isArray(item?.build?.batchBuild) ? item.build.batchBuild :
@@ -96,22 +183,6 @@ export default async function handler(req, res) {
         ? `Garnish: ${Array.isArray(item.garnish) ? item.garnish.join(', ') : item.garnish}`
         : null;
 
-    const isAffirmative = (text) => /\b(yes|yep|yup|yeah|sure|ok(ay)?|please|show\s*me|do\s*it)\b/i.test(text || '');
-    const isQuizRequest = (text) => /\bquiz|test\s*(me|knowledge)?\b/i.test(text || '');
-
-    // Basic matching helpers
-    const keysCocktails = Object.keys(cocktails || {});
-    const keysSpirits   = Object.keys(spirits   || {});
-    const qNorm = normalize(q);
-
-    const findBestKey = (keys) => {
-      // Try contains-in either direction
-      let found = keys.find(k => qNorm.includes(normalize(k)));
-      if (found) return found;
-      found = keys.find(k => normalize(k).includes(qNorm));
-      return found || null;
-    };
-
     // ===== Formatters (HTML only) =====
     function formatHeaderHTML(name, price) {
       return `<span class="accent-teal">${escapeHTML(name)}</span>${priceLine(price)}`;
@@ -126,16 +197,14 @@ export default async function handler(req, res) {
       const single = getSingleBuild(item);
       const lines = [];
 
-      // Always prefer batch build for initial staff response
-      if (batch && batch.length) {
+      if (batch?.length) {
         lines.push(...batch);
-      } else if (single && single.length) {
+      } else if (single?.length) {
         lines.push(...single);
-      } else if (getIngredients(item)) {
+      } else if (getIngredients(item)?.length) {
         lines.push(...getIngredients(item));
       }
 
-      // Append glass/garnish
       const glass = getGlass(item);
       const garnish = getGarnish(item);
       if (glass) lines.push(glass);
@@ -145,9 +214,7 @@ export default async function handler(req, res) {
         formatHeaderHTML(name, item.price),
         formatBulletsHTML(lines)
       ]);
-
       const bubble2 = `Do you want to see the single cocktail build without batch?`;
-
       return [bubble1, bubble2];
     }
 
@@ -155,9 +222,9 @@ export default async function handler(req, res) {
       const single = getSingleBuild(item);
       const lines = [];
 
-      if (single && single.length) {
+      if (single?.length) {
         lines.push(...single);
-      } else if (getIngredients(item)) {
+      } else if (getIngredients(item)?.length) {
         lines.push(...getIngredients(item));
       }
 
@@ -170,10 +237,7 @@ export default async function handler(req, res) {
         formatHeaderHTML(name, item.price),
         formatBulletsHTML(lines)
       ]);
-
-      // Offer quiz follow-up after the single build
       const bubble2 = `Want a quick quiz on ${escapeHTML(name)} (glass, garnish, or first ingredient)?`;
-
       return [bubble1, bubble2];
     }
 
@@ -205,7 +269,7 @@ export default async function handler(req, res) {
       const top = formatHeaderHTML(name, item.price);
       const desc = characterToLine(item.character) ||
                    (ingredients?.length ? `Bright, balanced, and easy to love.` : `A house favorite with great balance.`);
-      const ing = (ingredients && ingredients.length)
+      const ing = (ingredients?.length)
         ? `Ingredients: ${escapeHTML(ingredients.join(', '))}`
         : null;
 
@@ -213,50 +277,42 @@ export default async function handler(req, res) {
       return [block, upsellFor(name)];
     }
 
-    // Spirits formatting:
-    // - First line: NAME (bold, accent) (price)
-    // - Then each data point one bullet per line
+    // Spirits bullets: provide a friendly order, but include any extra fields too
     function formatSpirit(name, item) {
       const bubbleLines = [];
 
-      // Known, human-friendly ordering when possible
       const fieldsOrder = [
         ['type', 'Type & Category'],
-        ['category', 'Category'], // in case separated
+        ['typeAndCategory', 'Type & Category'],
+        ['category', 'Category'],
         ['agave', 'Agave Variety / Base Ingredient'],
-        ['base', 'Base Ingredient'], // alt key
+        ['agaveVariety', 'Agave Variety / Base Ingredient'],
+        ['base', 'Base Ingredient'],
         ['region', 'Region & Distillery'],
+        ['regionAndDistillery', 'Region & Distillery'],
         ['distillery', 'Distillery'],
         ['tastingNotes', 'Tasting Notes'],
         ['productionNotes', 'Production Notes'],
         ['brandIdentity', 'Distillery / Brand Identity'],
         ['funFact', 'Guest Talking Point / Fun Fact'],
+        ['guestTalkingPoint', 'Guest Talking Point / Fun Fact'],
         ['reviews', 'Reviews'],
-        // fallbacks likely present in your pasted set:
-        ['typeAndCategory', 'Type & Category'],
-        ['agaveVariety', 'Agave Variety / Base Ingredient'],
-        ['regionAndDistillery', 'Region & Distillery'],
-        ['guestTalkingPoint', 'Guest Talking Point / Fun Fact']
       ];
 
-      // Build a map of lowercased keys for flexible matching
+      // normalize to case-insensitive map
       const lowerMap = {};
       Object.keys(item || {}).forEach(k => { lowerMap[k.toLowerCase()] = item[k]; });
 
-      // Collect bullets in preferred order
+      // preferred order
       for (const [key, label] of fieldsOrder) {
-        const val =
-          lowerMap[key] ??
-          lowerMap[key.toLowerCase?.() || key] ??
-          null;
-
-        if (val) {
-          const text = Array.isArray(val) ? val.join('; ') : String(val);
+        const v = lowerMap[key.toLowerCase()];
+        if (v != null && v !== '') {
+          const text = Array.isArray(v) ? v.join('; ') : String(v);
           bubbleLines.push(`${label}: ${text}`);
         }
       }
 
-      // Also include any additional fields that weren't listed, except price
+      // include any other fields (skip price)
       const covered = new Set(fieldsOrder.map(([k]) => k.toLowerCase()));
       for (const rawKey of Object.keys(item || {})) {
         const lk = rawKey.toLowerCase();
@@ -264,7 +320,6 @@ export default async function handler(req, res) {
         const v = item[rawKey];
         if (v == null || v === '') continue;
         const text = Array.isArray(v) ? v.join('; ') : String(v);
-        // Humanize the label a bit
         const label = rawKey
           .replace(/([A-Z])/g, ' $1')
           .replace(/_/g, ' ')
@@ -276,48 +331,43 @@ export default async function handler(req, res) {
 
       const header = formatHeaderHTML(name, item.price);
       const bullets = formatBulletsHTML(bubbleLines);
-
       return [joinLines([header, bullets])];
     }
 
-    // ===== Direct match: cocktail or spirit =====
-    let matchedCocktailKey = findBestKey(keysCocktails);
-    let matchedSpiritKey = matchedCocktailKey ? null : findBestKey(keysSpirits);
+    // ===== Intent helpers =====
+    const isAffirmative = (text) => /\b(yes|yep|yup|yeah|sure|ok(ay)?|please|show\s*me|do\s*it)\b/i.test(text || '');
+    const isQuizRequest = (text) => /\bquiz|test\s*(me|knowledge)?\b/i.test(text || '');
 
-    // ===== Follow-ups / memory-driven branches =====
-    // If user says "yes" and we recently asked for single build, show it.
-    if (!matchedCocktailKey && !matchedSpiritKey) {
+    // ===== Try to match a cocktail or a spirit =====
+    const cocktailHit = findBest(cocktailsIdx);
+    const spiritHit   = cocktailHit ? null : findBest(spiritsIdx);
+
+    // ===== Follow-ups =====
+    if (!cocktailHit && !spiritHit) {
+      // “yes” to single build
       if (mode === 'staff' && isAffirmative(query) && sess.askedSingle && sess.lastItemType === 'cocktail' && sess.lastItemName) {
-        const item = cocktails[sess.lastItemName];
+        const item = cocktailsMap[sess.lastItemName];
         if (item) {
           const bubbles = formatCocktailStaffSingle(sess.lastItemName, item);
-          // update memory: single shown, no longer pending
           sess.askedSingle = false;
-          sess.lastItemName = sess.lastItemName;
-          sess.lastItemType = 'cocktail';
           sess.lastMode = 'staff';
           state.set(sessionKey, sess);
           return res.status(200).json({ bubbles, answer: bubbles.join('\n\n') });
         }
       }
 
-      // If user asks for a quiz explicitly AND we have a last cocktail
+      // quiz
       if (mode === 'staff' && isQuizRequest(query) && sess.lastItemType === 'cocktail' && sess.lastItemName) {
-        const item = cocktails[sess.lastItemName];
+        const item = cocktailsMap[sess.lastItemName];
         if (item) {
-          const quizQs = [];
-          if (item.glass) quizQs.push(`What’s the correct glass for ${sess.lastItemName}?`);
-          if (item.garnish) quizQs.push(`Name one garnish on ${sess.lastItemName}.`);
+          const qs = [];
+          if (item.glass) qs.push(`What’s the correct glass for ${sess.lastItemName}?`);
+          if (item.garnish) qs.push(`Name one garnish on ${sess.lastItemName}.`);
           const single = getSingleBuild(item);
           const batch = getBatchBuild(item);
           const firstFrom = (batch && batch[0]) || (single && single[0]) || null;
-          if (firstFrom) quizQs.push(`What’s the first ingredient (with quantity) in ${sess.lastItemName}?`);
-
-          const bubbles = quizQs.length
-            ? [quizQs[Math.floor(Math.random() * quizQs.length)]]
-            : [`Ready for a flashcard? What’s one ingredient in ${sess.lastItemName}?`];
-
-          // retain memory
+          if (firstFrom) qs.push(`What’s the first ingredient (with quantity) in ${sess.lastItemName}?`);
+          const bubbles = qs.length ? [qs[Math.floor(Math.random() * qs.length)]] : [`Ready for a quick flashcard? Name one ingredient in ${sess.lastItemName}.`];
           sess.lastMode = 'staff';
           state.set(sessionKey, sess);
           return res.status(200).json({ bubbles, answer: bubbles.join('\n\n') });
@@ -325,13 +375,13 @@ export default async function handler(req, res) {
       }
     }
 
-    // ===== If we matched a spirit =====
-    if (matchedSpiritKey) {
-      const item = spirits[matchedSpiritKey] || {};
-      const bubbles = formatSpirit(matchedSpiritKey, item);
+    // ===== Spirit matched =====
+    if (spiritHit) {
+      const name = spiritHit.key;
+      const item = spiritHit.item || {};
+      const bubbles = formatSpirit(name, item);
 
-      // update memory
-      sess.lastItemName = matchedSpiritKey;
+      sess.lastItemName = name;
       sess.lastItemType = 'spirit';
       sess.lastMode = mode;
       sess.askedSingle = false;
@@ -340,27 +390,22 @@ export default async function handler(req, res) {
       return res.status(200).json({ bubbles, answer: bubbles.join('\n\n') });
     }
 
-    // ===== If we matched a cocktail =====
-    if (matchedCocktailKey) {
-      const item = cocktails[matchedCocktailKey] || {};
+    // ===== Cocktail matched =====
+    if (cocktailHit) {
+      const name = cocktailHit.key;
+      const item = cocktailHit.item || {};
       let bubbles;
 
       if (mode === 'staff') {
-        bubbles = formatCocktailStaffBatch(matchedCocktailKey, item);
-
-        // set memory for follow-up "yes"
-        sess.lastItemName = matchedCocktailKey;
+        bubbles = formatCocktailStaffBatch(name, item);
+        sess.lastItemName = name;
         sess.lastItemType = 'cocktail';
         sess.lastMode = 'staff';
-        sess.askedSingle = true;  // we just asked if they want the single build
+        sess.askedSingle = true;
         state.set(sessionKey, sess);
-
       } else {
-        // guest mode
-        bubbles = formatCocktailGuest(matchedCocktailKey, item);
-
-        // memory (helps quizzes not needed in guest, but keep last)
-        sess.lastItemName = matchedCocktailKey;
+        bubbles = formatCocktailGuest(name, item);
+        sess.lastItemName = name;
         sess.lastItemType = 'cocktail';
         sess.lastMode = 'guest';
         sess.askedSingle = false;
@@ -370,27 +415,27 @@ export default async function handler(req, res) {
       return res.status(200).json({ bubbles, answer: bubbles.join('\n\n') });
     }
 
-    // ===== Nothing matched: use LLM as a fallback with both JSONs for context =====
-    // We will keep this lightweight and safe; still return HTML-friendly responses.
+    // ===== LLM fallback with both JSONs in context =====
     const staffDirectives = `
 You are the Spirit Guide (STAFF mode). Respond in HTML only (no markdown).
 Rules for cocktails:
-- If a cocktail is referenced, prefer the BATCH BUILD by default (if present).
-- Format bubble 1 as:
+- Prefer the BATCH BUILD by default (if present).
+- Bubble 1:
   <span class="accent-teal">NAME</span> (PRICE)
-  • one bullet per line for each build line (use batchBuild first; if not found, use single build "build" or "recipe"; if not found, use ingredients)
+  • one bullet per line (batchBuild first; if absent use single build "build" or "recipe"; else ingredients)
   • Glass: ...
   • Garnish: ...
-- Format bubble 2 exactly as:
+- Bubble 2 (exactly):
   Do you want to see the single cocktail build without batch?
 
-If user later confirms (e.g., "yes"), show the SINGLE BUILD ("build" or "recipe") similarly.
-If the user asks for a quiz on the last cocktail, ask one short question (glass, garnish, or first ingredient with quantity).
+If user confirms later, show the SINGLE BUILD similarly.
+If user asks for a quiz on the last cocktail, ask one short question (glass, garnish, or first ingredient with quantity).
 
 Rules for spirits:
-- If a spirit is referenced by name, create ONE bubble:
+- One bubble:
   <span class="accent-teal">NAME</span> (PRICE)
-  Then one bullet per line for each data point available. Prefer labels in this order when the data exists:
+  • one bullet per line for each data point.
+  Preferred labels:
     Type & Category
     Agave Variety / Base Ingredient
     Region & Distillery
@@ -399,48 +444,44 @@ Rules for spirits:
     Distillery / Brand Identity
     Guest Talking Point / Fun Fact
     Reviews
-  If keys differ, map them sensibly and still output one bullet per line.
-
-Do NOT output markdown. Use <br> for new lines. Use "• " at the start of bullet lines.`.trim();
+Map differing keys sensibly. Use <br> for newlines and "• " bullets. No markdown.`.trim();
 
     const guestDirectives = `
 You are the Spirit Guide (GUEST mode). Respond in HTML only (no markdown).
-- For cocktails, return ONLY two bubbles:
-  Bubble 1:
-    <span class="accent-teal">Name</span> (PRICE)
-    <br>
-    Short enticing one-sentence description from character/tasting notes.
-    <br>
-    Ingredients: a concise, comma-separated list (no quantities).
-  Bubble 2:
-    An upsell/pairing recommendation. You may include a <br> for a happy-hour line.
+Cocktails:
+- Bubble 1:
+  <span class="accent-teal">Name</span> (PRICE)
+  <br>
+  Short enticing one-sentence description from character/tasting notes.
+  <br>
+  Ingredients: concise, comma-separated list (no quantities).
+- Bubble 2:
+  Upsell/pairing (you may include a <br> for happy-hour line).
 
-- For spirits, use the same single-bubble format as staff:
+Spirits:
+- Same single-bubble format as staff:
   <span class="accent-teal">NAME</span> (PRICE)
-  • one bullet per line for each data point as described.
-
-Do NOT reveal detailed build/spec lines in guest mode.
-No markdown. Use HTML only.`.trim();
+  • one bullet per line for data points.
+Use HTML with <br> and "• ". No markdown.`.trim();
 
     const systemPrompt = `
-You have two structured JSON knowledge bases:
+You have two structured JSON knowledge bases.
 
 COCKTAILS:
-${process.env.COCKTAILS_JSON || "{}"}
+${typeof cocktails === 'string' ? cocktails : JSON.stringify(cocktails).slice(0, 50000)}
 
 SPIRITS:
-${process.env.SPIRITS_JSON || "{}"}
+${typeof spirits === 'string' ? spirits : JSON.stringify(spirits).slice(0, 50000)}
 
 Follow the correct mode strictly.
 
 ${mode === 'staff' ? staffDirectives : guestDirectives}
 
 Return either:
-1) {"bubbles": ["<html...>","<html...>"]}  (JSON with up to 2 bubbles)
+1) {"bubbles": ["<html...>","<html...>"]}  (up to 2 bubbles)
 or
-2) Plain HTML with two paragraphs separated by a blank line. Prefer the JSON format above.`.trim();
+2) Plain HTML with two paragraphs separated by a blank line. Prefer JSON format.`.trim();
 
-    // Use a small, inexpensive model. If OpenAI returns an error, we’ll return a gentle fallback.
     let llmBubbles = null;
     try {
       const r = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -463,7 +504,6 @@ or
         const data = await r.json();
         const content = data?.choices?.[0]?.message?.content || '';
 
-        // Try to extract JSON with bubbles
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           try {
@@ -473,38 +513,31 @@ or
             }
           } catch {}
         }
-        // Fallback: split plain HTML by blank line
         if (!llmBubbles) {
           const split = content.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean).slice(0, 2);
           if (split.length) llmBubbles = split;
         }
       }
-    } catch (e) {
+    } catch (_) {
       // ignore; handled below
     }
 
-    if (llmBubbles && llmBubbles.length) {
-      // best-effort: update memory if the LLM clearly referenced a cocktail or spirit name
-      // (lightweight heuristic)
-      const allKeys = [...keysCocktails, ...keysSpirits];
-      const hit = allKeys.find(k => new RegExp(`\\b${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(llmBubbles.join(' ')));
+    if (llmBubbles?.length) {
+      // heuristic memory update
+      const allNames = [...Object.keys(cocktailsMap), ...Object.keys(spiritsMap)];
+      const joined = llmBubbles.join(' ');
+      const hit = allNames.find(n => new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(joined));
       if (hit) {
         sess.lastItemName = hit;
-        sess.lastItemType = keysCocktails.includes(hit) ? 'cocktail' : 'spirit';
+        sess.lastItemType = Object.prototype.hasOwnProperty.call(cocktailsMap, hit) ? 'cocktail' : 'spirit';
         sess.lastMode = mode;
-        // If staff and we likely showed a batch, set askedSingle true
-        if (mode === 'staff' && sess.lastItemType === 'cocktail') {
-          sess.askedSingle = true;
-        } else {
-          sess.askedSingle = false;
-        }
+        sess.askedSingle = (mode === 'staff' && sess.lastItemType === 'cocktail');
         state.set(sessionKey, sess);
       }
-
       return res.status(200).json({ bubbles: llmBubbles, answer: llmBubbles.join('\n\n') });
     }
 
-    // ===== Final fallback =====
+    // Final fallback
     const fallback = [`Sorry, I don't have this answer yet. I'm still learning...`];
     return res.status(200).json({ bubbles: fallback, answer: fallback.join('\n\n') });
 
