@@ -155,7 +155,6 @@ html,body{
   border-bottom:var(--border) solid var(--accent);
   border-top:var(--border) solid var(--accent);
   border-radius:var(--radius);
-  margin-left:auto;
   max-width:min(720px, 90%);
   background:transparent;
 }
