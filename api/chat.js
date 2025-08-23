@@ -1,20 +1,14 @@
 // /api/chat.js
 //
 // Chat backend for Spirit Guide
-// - Reads cocktails from process.env.COCKTAILS_JSON
-// - Reads spirits   from process.env.SPIRITS_JSON
-// - Staff mode defaults to showing BATCH build; follows up with a single-build prompt
-// - Remembers last item per-session (very lightweight, in-memory) so replies like “yes” work
-// - Spirits output: name (bold, accent) + (price) on first line, then one bullet per data point
+// - Reads cocktails/spirits from req.body first (front-end JSON), then env fallback
+// - Flattens nested category JSON (e.g., { Tequila: { "Espolon Blanco": {...} } })
+// - Staff mode: batch build first; follow-up asks for single build
+// - Remembers last item per-session so "yes" shows single build
+// - Spirits output: Name (accent) + (price) then one bullet per line of datapoints
+// - More robust matching: diacritics-stripped + token fuzzy match
 //
-// CHANGELOG (this drop-in):
-// - More tolerant SPIRIT matching:
-//   * token-based matching for brand-only queries (e.g., "espolon")
-//   * handles variants like "espolon blanco", "don julio", "pasote", "fortaleza repo"
-//   * alias support from optional item.aliases (array) in spirits JSON
-//
-// NOTE: This server keeps a tiny in-memory state keyed by a best-effort session key
-//       (x-session-id header if provided, otherwise IP+UA). It resets automatically.
+// NOTE: In-memory session store resets on cold start (OK for demo/prototype)
 
 export default async function handler(req, res) {
   try {
@@ -30,14 +24,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing query' });
     }
     const query = String(queryRaw).trim();
-    const q = query.toLowerCase();
 
-    // ===== Load knowledge from env =====
-    // COCKTAILS_JSON replaced MENU_JSON per user change
+    // ===== Load knowledge from client first, env as fallback =====
     let cocktails = {};
     let spirits = {};
-    try { cocktails = JSON.parse(process.env.COCKTAILS_JSON || '{}'); } catch { cocktails = {}; }
-    try { spirits   = JSON.parse(process.env.SPIRITS_JSON   || '{}'); } catch { spirits   = {}; }
+
+    // Front-end may post JSON directly
+    if (body.cocktails && typeof body.cocktails === 'object') cocktails = body.cocktails;
+    if (body.spirits && typeof body.spirits === 'object') spirits = body.spirits;
+
+    // Env fallback
+    if (!Object.keys(cocktails).length) {
+      try { cocktails = JSON.parse(process.env.COCKTAILS_JSON || '{}'); } catch { cocktails = {}; }
+    }
+    if (!Object.keys(spirits).length) {
+      try { spirits = JSON.parse(process.env.SPIRITS_JSON || '{}'); } catch { spirits = {}; }
+    }
 
     // ===== Lightweight session memory (per user) =====
     const now = Date.now();
@@ -47,7 +49,6 @@ export default async function handler(req, res) {
 
     if (!global.__SG_STATE__) global.__SG_STATE__ = new Map();
     const state = global.__SG_STATE__;
-    // cleanup occasionally
     if (Math.random() < 0.02) {
       const TTL = 1000 * 60 * 20; // 20 minutes
       for (const [k, v] of state.entries()) {
@@ -59,10 +60,15 @@ export default async function handler(req, res) {
     state.set(sessionKey, sess);
 
     // ===== Utilities =====
-    const normalize = (s) => String(s || '')
+    const stripDiacritics = (s) =>
+      String(s || '')
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '');
+
+    const normalize = (s) => stripDiacritics(s)
       .toLowerCase()
-      .replace(/[\u2019']/g, '')              // apostrophes
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')       // non-alphanum -> space
+      .replace(/[\u2019']/g, '')            // apostrophes
+      .replace(/[^a-z0-9]+/g, ' ')          // non-alphanum -> space
       .replace(/\s+/g, ' ')
       .trim();
 
@@ -99,100 +105,139 @@ export default async function handler(req, res) {
     const isAffirmative = (text) => /\b(yes|yep|yup|yeah|sure|ok(ay)?|please|show\s*me|do\s*it)\b/i.test(text || '');
     const isQuizRequest = (text) => /\bquiz|test\s*(me|knowledge)?\b/i.test(text || '');
 
-    // ===== Build tolerant SPIRIT index =====
-    // Allows queries like "espolon", "espolon blanco", "don julio", "fortaleza repo"
-    const spiritIndex = makeSpiritIndex(spirits);
+    // ===== Flatten nested catalogs (categories → items) =====
+    // Accepts shapes like:
+    //   { "Espolon Blanco": {...} }
+    //   { "Tequila": { "Espolon Blanco": {...} } }
+    //   { "Tequila": [ { name: "Espolon Blanco", ... }, ... ] }
+    function flattenCatalog(obj) {
+      const out = {}; // { Name: item }
+      function walk(node, parentKey) {
+        if (!node) return;
 
-    function makeSpiritIndex(sp) {
-      const idx = [];
-      const spiritKeys = Object.keys(sp || {});
-      for (const key of spiritKeys) {
-        const item = sp[key] || {};
-        const displayName = key; // key is the visible name in your JSON
-        const nName = normalize(displayName);
+        if (Array.isArray(node)) {
+          for (const el of node) {
+            if (el && typeof el === 'object') {
+              const name = el.name || el.title || parentKey; // try to find a name
+              if (name && (el.price || el.type || el.tastingNotes || el.ingredients || el.build || el.batchBuild)) {
+                out[String(name)] = el;
+              } else {
+                walk(el, parentKey);
+              }
+            }
+          }
+          return;
+        }
 
-        // Pull possible brand tokens from the name and item fields
-        const altTokens = new Set();
+        if (typeof node === 'object') {
+          // If this object looks like an item (has item-ish fields) and has a key name
+          const keys = Object.keys(node);
+          const looksLikeItem =
+            ('ingredients' in node) || ('build' in node) || ('batchBuild' in node) ||
+            ('glass' in node) || ('garnish' in node) ||
+            ('tastingNotes' in node) || ('productionNotes' in node) || ('type' in node);
 
-        // tokens from the name without strength/variant words
-        splitTokens(nName).forEach(t => altTokens.add(t));
+          if (looksLikeItem && parentKey && !keys.some(k => typeof node[k] === 'object')) {
+            // probably an item object that was passed with a parent name; add it
+            out[String(parentKey)] = node;
+          }
 
-        // include common fields that may contain brand words
-        const brandy = [
-          item.brand, item.distillery, item.distilleryBrand, item.brandIdentity,
-          item.type, item.typeAndCategory, item.category
-        ].filter(Boolean).join(' ');
-
-        splitTokens(normalize(brandy)).forEach(t => altTokens.add(t));
-
-        // include user-provided aliases (array of strings)
-        asArray(item.aliases).forEach(a => splitTokens(normalize(a)).forEach(t => altTokens.add(t)));
-
-        // remove generic stopwords
-        const stops = new Set(['tequila','mezcal','raicilla','sotol','rum','vodka','gin','whiskey','whisky','blanco','reposado','repo','añejo','anejo','extra','cristalino','espadin','espadin','joven','silver','plata','gold']);
-        const tokens = Array.from(altTokens).filter(t => t && !stops.has(t));
-
-        idx.push({
-          key,
-          name: displayName,
-          nName,
-          tokens, // brand-ish tokens
-          fullTokens: Array.from(altTokens), // includes type words too
-        });
-      }
-      return idx;
-    }
-
-    function splitTokens(s) {
-      return (s || '').split(' ').map(t => t.trim()).filter(Boolean);
-    }
-
-    function scoreSpiritMatch(qText) {
-      const nQ = normalize(qText);
-      const qTokens = splitTokens(nQ);
-      const results = [];
-
-      // Fast path: exact or contains in display name
-      for (const entry of spiritIndex) {
-        if (entry.nName === nQ || entry.nName.includes(nQ) || nQ.includes(entry.nName)) {
-          results.push({ key: entry.key, score: 100 });
+          // otherwise iterate children
+          for (const k of keys) {
+            const v = node[k];
+            // If child is a terminal item object, record it under its key
+            if (v && typeof v === 'object' && !Array.isArray(v)) {
+              const childLooksItem =
+                ('ingredients' in v) || ('build' in v) || ('batchBuild' in v) ||
+                ('glass' in v) || ('garnish' in v) ||
+                ('tastingNotes' in v) || ('productionNotes' in v) || ('type' in v);
+              if (childLooksItem) {
+                out[String(k)] = v;
+              } else {
+                walk(v, k);
+              }
+            } else if (Array.isArray(v)) {
+              // arrays of items
+              walk(v, k);
+            }
+          }
         }
       }
-      if (results.length) {
-        results.sort((a,b) => b.score - a.score);
-        return results[0].key;
-      }
-
-      // Token overlap scoring:
-      for (const entry of spiritIndex) {
-        // overlap on brand-ish tokens
-        const overlap = qTokens.filter(t => entry.tokens.includes(t)).length;
-
-        // bonus for type/variant words matching in fullTokens
-        const variantHits = qTokens.filter(t => entry.fullTokens.includes(t) && /^(blanco|reposado|repo|añejo|anejo|cristalino|joven|silver|plata)$/.test(t)).length;
-
-        // small bonus if query is a substring of the display name words
-        const substrBonus = entry.nName.includes(nQ) ? 1 : 0;
-
-        const score = overlap * 10 + variantHits * 4 + substrBonus;
-        if (score > 0) results.push({ key: entry.key, score });
-      }
-
-      if (!results.length) return null;
-      results.sort((a,b) => b.score - a.score);
-      // require a small threshold to avoid wild matches
-      return results[0].score >= 8 ? results[0].key : null;
+      walk(obj, null);
+      return out;
     }
 
-    // ===== Basic cocktail matching (kept as before) =====
-    const keysCocktails = Object.keys(cocktails || {});
-    const qNorm = normalize(q);
-    const findBestCocktailKey = () => {
-      let found = keysCocktails.find(k => qNorm.includes(normalize(k)));
-      if (found) return found;
-      found = keysCocktails.find(k => normalize(k).includes(qNorm));
-      return found || null;
-    };
+    const flatCocktails = flattenCatalog(cocktails);
+    const flatSpirits   = flattenCatalog(spirits);
+
+    // Build a normalized index for fuzzy lookup
+    function buildIndex(mapObj) {
+      const entries = [];
+      for (const name of Object.keys(mapObj || {})) {
+        const item = mapObj[name];
+        const normName = normalize(name);
+        const aliases = new Set([normName]);
+
+        // Optional alias fields
+        for (const key of ['aka', 'aliases', 'alsoKnownAs']) {
+          const val = item[key];
+          if (Array.isArray(val)) val.forEach(a => aliases.add(normalize(a)));
+          else if (val) aliases.add(normalize(val));
+        }
+
+        // Also derive brand-only + variety-only tokens for spirits (e.g., "espolon", "pasote blanco")
+        // split the name into tokens; store useful prefixes
+        const tokens = normName.split(' ');
+        if (tokens.length > 1) {
+          aliases.add(tokens[0]); // brand
+          aliases.add(tokens.slice(0, 2).join(' ')); // brand + variant
+        }
+
+        entries.push({ name, normName, aliases, item });
+      }
+      return entries;
+    }
+
+    const cocktailIdx = buildIndex(flatCocktails);
+    const spiritIdx   = buildIndex(flatSpirits);
+
+    // Token-based fuzzy find:
+    // - exact alias match first
+    // - then "query is contained in candidate" or "candidate contains query"
+    // - then token overlap score
+    function findBest(query, index) {
+      const qn = normalize(query);
+      if (!qn) return null;
+
+      // exact/alias
+      for (const e of index) {
+        if (e.aliases.has(qn)) return e.name;
+      }
+
+      // contains either way
+      for (const e of index) {
+        if (e.normName.includes(qn) || qn.includes(e.normName)) return e.name;
+      }
+
+      // token overlap
+      const qTokens = new Set(qn.split(' '));
+      let best = null;
+      let bestScore = 0;
+      for (const e of index) {
+        const t = new Set(e.normName.split(' '));
+        let score = 0;
+        for (const tok of qTokens) {
+          if (t.has(tok)) score += 1;
+        }
+        // slight bonus if first token matches (brand)
+        const qFirst = qn.split(' ')[0];
+        const eFirst = e.normName.split(' ')[0];
+        if (qFirst && eFirst && qFirst === eFirst) score += 0.25;
+        if (score > bestScore) { bestScore = score; best = e.name; }
+      }
+      // require at least 1 token overlap to avoid wild guesses
+      return bestScore >= 1 ? best : null;
+    }
 
     // ===== Formatters (HTML only) =====
     function formatHeaderHTML(name, price) {
@@ -208,7 +253,6 @@ export default async function handler(req, res) {
       const single = getSingleBuild(item);
       const lines = [];
 
-      // Always prefer batch build for initial staff response
       if (batch && batch.length) {
         lines.push(...batch);
       } else if (single && single.length) {
@@ -217,7 +261,6 @@ export default async function handler(req, res) {
         lines.push(...getIngredients(item));
       }
 
-      // Append glass/garnish
       const glass = getGlass(item);
       const garnish = getGarnish(item);
       if (glass) lines.push(glass);
@@ -227,9 +270,7 @@ export default async function handler(req, res) {
         formatHeaderHTML(name, item.price),
         formatBulletsHTML(lines)
       ]);
-
       const bubble2 = `Do you want to see the single cocktail build without batch?`;
-
       return [bubble1, bubble2];
     }
 
@@ -252,10 +293,7 @@ export default async function handler(req, res) {
         formatHeaderHTML(name, item.price),
         formatBulletsHTML(lines)
       ]);
-
-      // Offer quiz follow-up after the single build
       const bubble2 = `Want a quick quiz on ${escapeHTML(name)} (glass, garnish, or first ingredient)?`;
-
       return [bubble1, bubble2];
     }
 
@@ -295,48 +333,41 @@ export default async function handler(req, res) {
       return [block, upsellFor(name)];
     }
 
-    // Spirits formatting:
-    // - First line: NAME (bold, accent) (price)
-    // - Then each data point one bullet per line
+    // Spirits (one bubble: header + bullets)
     function formatSpirit(name, item) {
       const bubbleLines = [];
 
-      // Preferred ordering when available
       const fieldsOrder = [
         ['type', 'Type & Category'],
+        ['typeAndCategory', 'Type & Category'],
         ['category', 'Category'],
         ['agave', 'Agave Variety / Base Ingredient'],
         ['base', 'Base Ingredient'],
+        ['agaveVariety', 'Agave Variety / Base Ingredient'],
         ['region', 'Region & Distillery'],
+        ['regionAndDistillery', 'Region & Distillery'],
         ['distillery', 'Distillery'],
         ['tastingNotes', 'Tasting Notes'],
         ['productionNotes', 'Production Notes'],
         ['brandIdentity', 'Distillery / Brand Identity'],
         ['funFact', 'Guest Talking Point / Fun Fact'],
+        ['guestTalkingPoint', 'Guest Talking Point / Fun Fact'],
         ['reviews', 'Reviews'],
-        // commons in your pasted data:
-        ['typeAndCategory', 'Type & Category'],
-        ['agaveVariety', 'Agave Variety / Base Ingredient'],
-        ['regionAndDistillery', 'Region & Distillery'],
-        ['guestTalkingPoint', 'Guest Talking Point / Fun Fact']
       ];
 
       const lowerMap = {};
       Object.keys(item || {}).forEach(k => { lowerMap[k.toLowerCase()] = item[k]; });
 
       for (const [key, label] of fieldsOrder) {
-        const val =
-          lowerMap[key] ??
-          lowerMap[String(key).toLowerCase()] ??
-          null;
-        if (val) {
+        const val = lowerMap[key.toLowerCase()];
+        if (val != null && val !== '') {
           const text = Array.isArray(val) ? val.join('; ') : String(val);
           bubbleLines.push(`${label}: ${text}`);
         }
       }
 
-      // Include any additional fields that weren't listed, except price/aliases
-      const covered = new Set(fieldsOrder.map(([k]) => String(k).toLowerCase()).concat(['price','aliases']));
+      // add any extra fields not already covered (except price)
+      const covered = new Set(fieldsOrder.map(([k]) => k.toLowerCase()).concat(['price']));
       for (const rawKey of Object.keys(item || {})) {
         const lk = rawKey.toLowerCase();
         if (covered.has(lk)) continue;
@@ -354,30 +385,29 @@ export default async function handler(req, res) {
 
       const header = formatHeaderHTML(name, item.price);
       const bullets = formatBulletsHTML(bubbleLines);
-
       return [joinLines([header, bullets])];
     }
 
-    // ===== Direct match: cocktail or spirit =====
-    let matchedCocktailKey = findBestCocktailKey();
-    let matchedSpiritKey = matchedCocktailKey ? null : scoreSpiritMatch(q);
+    // ===== Matching & memory-driven branches =====
+    const matchedCocktailKey = findBest(query, cocktailIdx);
+    const matchedSpiritKey   = !matchedCocktailKey ? findBest(query, spiritIdx) : null;
 
-    // ===== Follow-ups / memory-driven branches =====
+    // Follow-up: user said "yes" to single build for last cocktail
     if (!matchedCocktailKey && !matchedSpiritKey) {
       if (mode === 'staff' && isAffirmative(query) && sess.askedSingle && sess.lastItemType === 'cocktail' && sess.lastItemName) {
-        const item = cocktails[sess.lastItemName];
+        const item = flatCocktails[sess.lastItemName];
         if (item) {
           const bubbles = formatCocktailStaffSingle(sess.lastItemName, item);
           sess.askedSingle = false;
-          sess.lastItemType = 'cocktail';
           sess.lastMode = 'staff';
           state.set(sessionKey, sess);
           return res.status(200).json({ bubbles, answer: bubbles.join('\n\n') });
         }
       }
 
+      // Quiz request
       if (mode === 'staff' && isQuizRequest(query) && sess.lastItemType === 'cocktail' && sess.lastItemName) {
-        const item = cocktails[sess.lastItemName];
+        const item = flatCocktails[sess.lastItemName];
         if (item) {
           const quizQs = [];
           if (item.glass) quizQs.push(`What’s the correct glass for ${sess.lastItemName}?`);
@@ -398,51 +428,41 @@ export default async function handler(req, res) {
       }
     }
 
-    // ===== If we matched a spirit =====
+    // Spirit matched
     if (matchedSpiritKey) {
-      const item = spirits[matchedSpiritKey] || {};
+      const item = flatSpirits[matchedSpiritKey] || {};
       const bubbles = formatSpirit(matchedSpiritKey, item);
-
-      // update memory
       sess.lastItemName = matchedSpiritKey;
       sess.lastItemType = 'spirit';
       sess.lastMode = mode;
       sess.askedSingle = false;
       state.set(sessionKey, sess);
-
       return res.status(200).json({ bubbles, answer: bubbles.join('\n\n') });
     }
 
-    // ===== If we matched a cocktail =====
+    // Cocktail matched
     if (matchedCocktailKey) {
-      const item = cocktails[matchedCocktailKey] || {};
+      const item = flatCocktails[matchedCocktailKey] || {};
       let bubbles;
-
       if (mode === 'staff') {
         bubbles = formatCocktailStaffBatch(matchedCocktailKey, item);
-
-        // set memory for follow-up "yes"
         sess.lastItemName = matchedCocktailKey;
         sess.lastItemType = 'cocktail';
         sess.lastMode = 'staff';
-        sess.askedSingle = true;  // we just asked if they want the single build
+        sess.askedSingle = true;
         state.set(sessionKey, sess);
-
       } else {
-        // guest mode
         bubbles = formatCocktailGuest(matchedCocktailKey, item);
-
         sess.lastItemName = matchedCocktailKey;
         sess.lastItemType = 'cocktail';
         sess.lastMode = 'guest';
         sess.askedSingle = false;
         state.set(sessionKey, sess);
       }
-
       return res.status(200).json({ bubbles, answer: bubbles.join('\n\n') });
     }
 
-    // ===== Nothing matched: LLM fallback with both JSONs for context =====
+    // ===== LLM fallback with both JSONs (HTML only) =====
     const staffDirectives = `
 You are the Spirit Guide (STAFF mode). Respond in HTML only (no markdown).
 Rules for cocktails:
@@ -461,7 +481,7 @@ If the user asks for a quiz on the last cocktail, ask one short question (glass,
 Rules for spirits:
 - If a spirit is referenced by name, create ONE bubble:
   <span class="accent-teal">NAME</span> (PRICE)
-  Then one bullet per line for each data point available. Prefer labels in this order when the data exists:
+  Then one bullet per line for each data point available in sensible order:
     Type & Category
     Agave Variety / Base Ingredient
     Region & Distillery
@@ -470,7 +490,6 @@ Rules for spirits:
     Distillery / Brand Identity
     Guest Talking Point / Fun Fact
     Reviews
-  If keys differ, map them sensibly and still output one bullet per line.
 
 Do NOT output markdown. Use <br> for new lines. Use "• " at the start of bullet lines.`.trim();
 
@@ -484,23 +503,22 @@ You are the Spirit Guide (GUEST mode). Respond in HTML only (no markdown).
     <br>
     Ingredients: a concise, comma-separated list (no quantities).
   Bubble 2:
-    An upsell/pairing recommendation. You may include a <br> for a happy-hour line.
+    An upsell/pairing recommendation (you may include a <br>).
 
-- For spirits, use the same single-bubble format as staff:
+- For spirits (same single-bubble format as staff):
   <span class="accent-teal">NAME</span> (PRICE)
   • one bullet per line for each data point as described.
 
-Do NOT reveal detailed build/spec lines in guest mode.
-No markdown. Use HTML only.`.trim();
+No markdown. HTML only.`.trim();
 
     const systemPrompt = `
-You have two structured JSON knowledge bases:
+You have two structured JSON knowledge bases.
 
 COCKTAILS:
-${process.env.COCKTAILS_JSON || "{}"}
+${JSON.stringify(flatCocktails).slice(0, 25000)}
 
 SPIRITS:
-${process.env.SPIRITS_JSON || "{}"}
+${JSON.stringify(flatSpirits).slice(0, 25000)}
 
 Follow the correct mode strictly.
 
@@ -533,7 +551,6 @@ or
         const data = await r.json();
         const content = data?.choices?.[0]?.message?.content || '';
 
-        // Try to extract JSON with bubbles
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           try {
@@ -543,38 +560,33 @@ or
             }
           } catch {}
         }
-        // Fallback: split plain HTML by blank line
         if (!llmBubbles) {
           const split = content.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean).slice(0, 2);
           if (split.length) llmBubbles = split;
         }
       }
-    } catch (e) {
-      // ignore; handled below
-    }
+    } catch {}
 
     if (llmBubbles && llmBubbles.length) {
-      // best-effort: update memory if the LLM clearly referenced a cocktail or spirit name
-      const allSpiritKeys = Object.keys(spirits || {});
-      const allCocktailKeys = Object.keys(cocktails || {});
-      const allKeys = [...allCocktailKeys, ...allSpiritKeys];
-      const hit = allKeys.find(k => new RegExp(`\\b${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(llmBubbles.join(' ')));
-      if (hit) {
-        sess.lastItemName = hit;
-        sess.lastItemType = allCocktailKeys.includes(hit) ? 'cocktail' : 'spirit';
-        sess.lastMode = mode;
-        if (mode === 'staff' && sess.lastItemType === 'cocktail') {
-          sess.askedSingle = true;
-        } else {
-          sess.askedSingle = false;
+      // best-effort memory update
+      const allNames = new Set([...Object.keys(flatCocktails), ...Object.keys(flatSpirits)]);
+      const joined = llmBubbles.join(' ');
+      for (const name of allNames) {
+        const re = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (re.test(joined)) {
+          sess.lastItemName = name;
+          sess.lastItemType = flatCocktails[name] ? 'cocktail' : 'spirit';
+          sess.lastMode = mode;
+          sess.askedSingle = (mode === 'staff' && sess.lastItemType === 'cocktail');
+          state.set(sessionKey, sess);
+          break;
         }
-        state.set(sessionKey, sess);
       }
 
       return res.status(200).json({ bubbles: llmBubbles, answer: llmBubbles.join('\n\n') });
     }
 
-    // ===== Final fallback =====
+    // Final fallback
     const fallback = [`Sorry, I don't have this answer yet. I'm still learning...`];
     return res.status(200).json({ bubbles: fallback, answer: fallback.join('\n\n') });
 
