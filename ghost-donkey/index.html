@@ -2,253 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Spirit Guide</title>
-  <style>
-    :root{
-      --bg:#f9e7e7;
-      --accent:#ee4d36;
-      --teal:#55c4bb;
-      --text:#09080a;
-      --muted:#f3d9d9;
-      --maxw:1100px;
-      --border:2px;
-      --radius:0;             /* square corners */
-      --app-h: 100vh;         /* updated via JS to visible viewport height */
-      --composer-h: 88px;     /* updated via JS to input bar height */
-    }
 
-    /* No page scroll; only chat scrolls */
-    html,body{
-      height:100%;
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      overflow:hidden;
-      font-family:"Futura PT", Futura, "Avenir Next", Avenir, Arial, sans-serif;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-    }
-
-    .app{
-      height:var(--app-h);           /* visible viewport height (handles mobile keyboard) */
-      max-width:var(--maxw);
-      margin:0 auto;
-      padding-inline: clamp(16px, 4vw, 40px);
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      box-sizing:border-box;
-      overscroll-behavior:contain;
-    }
-
-    /* ===== Top bar (sticky) ===== */
-    .topbar{
-        position:sticky;
-        top:env(safe-area-inset-top, 0);
-        z-index:10;
-        background:var(--bg);
-        display:grid;
-        grid-template-columns: 1fr auto; /* title left, toggle right */
-        align-items:center;
-        gap:12px;
-        padding:8px 0 2px;
-    }
-    /* ===== Brand ===== */
-    .brand{
-      display:inline-flex;                 /* sit content in a single row */
-      align-items:center;                  /* align to text baseline */
-      gap:10px;
-      margin:0;
-      line-height:1.05;
-      font-weight:700;
-      font-size: 2rem;                     /* your current size */
-      letter-spacing:.3px;
-      white-space:nowrap;                  /* prevent wrapping */
-    }
-    .brand .title{
-      font-weight:900;
-      color:var(--teal);
-      text-shadow:-3px 3px 0 var(--accent);
-      letter-spacing:1px;
-    }
-    .brand .brandmark{
-      height:1em;                          /* match text height */
-      width:auto;
-      object-fit:contain;
-      display:inline-block;
-      vertical-align:baseline;             /* align with text baseline */
-      transform: translateY(0.03em);       /* tiny nudge for optical alignment */
-      image-rendering:auto;
-    }
-    @media (max-width:768px){
-      .brand{ font-size:1.6rem; }          /* scales both text & logo together */
-    }
-
-    /* ===== Toggle ===== */
-    .toggle{
-      display:inline-flex;
-      border:var(--border) solid var(--accent);
-      padding:3px;
-      gap:4px;
-      background:transparent;
-      border-radius: 4px;
-    }
-    .toggle button{
-      all:unset;
-      padding:8px 12px;
-      font-size:.75rem;
-      font-weight:700;
-      cursor:pointer;
-      color:var(--text);
-      border-radius: 4px;
-    }
-    @media (max-width:560px){
-      .toggle button{ padding:6px 8px; font-size:.75rem; }
-    }
-    .toggle .on{ background:var(--teal); color:#fff; }
-    .toggle .off{ background:transparent; color:var(--accent); }
-
-    .accent-strong{ color:var(--accent); font-weight:800; }
-
-    /* ===== Divider ===== */
-    .divider{
-      flex:0 0 auto;
-      display:block;
-      width:100%;
-      height:auto;
-      margin:6px 0 6px;
-      object-fit:contain;
-    }
-    /* (Removed the rule that hid .divider on mobile so it shows everywhere) */
-
-    /* ===== Chat panel (fills remaining height) ===== */
-    .panel{
-      flex:1 1 auto;
-      min-height:0; /* critical to allow inner scroll to size */
-      border:var(--border) solid var(--accent);
-      border-radius: 4px;
-      background:var(--muted);
-      padding: clamp(14px, 2vw, 20px);
-      overflow:hidden; /* wrapper has no scrollbars */
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      margin-bottom: 1rem; /* buffer handled by sticky input padding */
-    }
-
-    /* Only this scrolls */
-    .scroll{
-      flex:1 1 auto;
-      min-height:0;
-      overflow-y:auto;
-      padding-right:4px; /* space for scrollbar */
-      /* keep last message clear of the sticky input bar */
-      padding-bottom: calc(var(--composer-h) + 16px);
-    }
-
-    /* Messages */
-    .msg{ margin:10px 0; font-size:clamp(15px, 1.15vw, 18px); line-height:1.35; }
-    .msg.ai{ /* plain text */ }
-    .msg.user{
-      padding:8px;
-      border-bottom:var(--border) solid var(--accent);
-      border-top:var(--border) solid var(--accent);
-      border-radius:var(--radius);
-      /*margin-left:auto; */
-      max-width:min(720px, 90%);
-      background:transparent;
-    }
-    .accent-teal{ color:var(--teal); font-weight:800; }
-
-    /* ===== Input bar (sticky bottom) ===== */
-    .inputbar{
-      position:sticky;
-      bottom:0;
-      z-index:10;
-      display:flex;
-      gap:10px;
-      align-items:center;
-      background:var(--bg); /* ensure solid behind inputs on iOS */
-      padding-bottom: env(safe-area-inset-bottom, 0);
-    }
-    .inputbar .field{
-      flex:1 1 auto; min-width:0; /* prevents wrapping */
-      display:flex; align-items:center; gap:10px;
-      border:var(--border) solid var(--accent);
-      border-radius: 4px;
-      background:var(--bg);
-      padding:8px 10px;
-    }
-
-    .field {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .field input{
-      all:unset;
-      flex:1 1 auto; min-width:0;
-      font-size:clamp(15px, 1.1vw, 17px);
-      line-height:1.2;
-      color:var(--text);
-    }
-
-    .mic{
-      all: unset;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-      height: 28px;
-      width: 28px;
-    }
-    .mic.listening{ color:var(--accent); }
-    .mic.recording{ color:var(--teal); }
-
-    .mic img, .send img {
-      display: block;
-      height: 24px;
-      width: 24px;
-    }
-
-    .send {
-      flex: 0 0 auto;
-      height: 40px;
-      width: 40px;
-      border: var(--border) solid var(--accent);
-      background: var(--accent);
-      color: #fff;
-      border-radius: 4px;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-    }
-    .send:disabled{ opacity:.55; cursor:not-allowed; }
-
-    .hint{
-      font-size:clamp(12px, .95vw, 14px);
-      text-align:center;
-      padding-top:6px;
-      padding-bottom:6px;
-    }
-    .hint .b{ color:var(--teal); font-weight:800; }
-    .hint .a{ color:var(--accent); font-weight:800; }
-
-    /* Desktop horizontal breathing */
-    @media (min-width:1100px){
-      .app{ padding-inline:56px; }
-    }
-  </style>
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
   <div class="app">
     <!-- Top bar -->
     <div class="topbar">
       <h1 class="brand" aria-label="Spirit Guide">
-        <img class="brandmark" src="/ghost-donkey/GD-Burro-1.webp" alt="" />
+        <img class="brandmark" src="assets/img/GD-Burro-1.webp" alt="" />
         <span class="title">SPIRIT&nbsp;GUIDE</span>
       </h1>
+
       <!-- Toggle -->
       <div class="toggle" role="tablist" aria-label="Mode">
         <button id="staffBtn" class="on" role="tab" aria-selected="true">Staff</button>
@@ -257,8 +25,7 @@
     </div>
 
     <!-- Floral divider -->
-    <img class="divider" src="/ghost-donkey/GD_FloralDivider.webp" alt="floral divider" />
-
+    <img class="divider" src="assets/img/GD_FloralDivider.webp" alt="floral divider" />
 
     <!-- Chat panel -->
     <section class="panel" aria-label="Chat">
@@ -267,14 +34,23 @@
       <!-- Input row -->
       <div id="composer" class="inputbar">
         <div class="field">
-          <input id="input" type="text" placeholder="Ask anything..." />
+          <input
+            id="input"
+            type="text"
+            placeholder="Ask anything..."
+            inputmode="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="sentences"
+            spellcheck="false"
+          />
           <!-- Mic button inside field -->
           <button id="mic" class="mic" title="Voice input" aria-label="Voice input">
-            <img src="/ghost-donkey/GD-icon-voice.svg" alt="Mic" />
+            <img src="assets/icons/GD-icon-voice.svg" alt="Mic" />
           </button>
-           <!-- Send button (inside the field) -->
+           <!-- Send button inside field -->
         <button id="send" class="send" title="Send" aria-label="Send">
-          <img src="/ghost-donkey/GD-icon-send.svg" alt="Send" />
+          <img src="assets/icons/GD-icon-send.svg" alt="Send" />
         </button>
         </div>
       </div>
@@ -285,245 +61,7 @@
     </section>
   </div>
 
-  <script>
-    // Elements
-    const chatEl   = document.getElementById('chat');
-    const inputEl  = document.getElementById('input');
-    const sendBtn  = document.getElementById('send');
-    const guestBtn = document.getElementById('guestBtn');
-    const staffBtn = document.getElementById('staffBtn');
-    const composer = document.getElementById('composer');
-    const micBtn   = document.getElementById('mic'); // <- FIXED id hookup
-
-    let mode = 'staff'; // 'guest' | 'staff'
-
-    function appendAI(html){
-  const div = document.createElement('div');
-  div.className = 'msg ai';
-  div.innerHTML = String(html || '');   // <-- trust the server HTML
-  chatEl.appendChild(div);
-  chatEl.scrollTop = chatEl.scrollHeight;
-}
-
-    function appendUser(text){
-      const div = document.createElement('div');
-      div.className = 'msg user';
-      div.textContent = text;
-      chatEl.appendChild(div);
-      chatEl.scrollTop = chatEl.scrollHeight;
-    }
-
-    function setMode(next){
-      mode = next;
-      const isGuest = mode === 'guest';
-
-      // Toggle UI state
-      staffBtn.className = isGuest ? 'off' : 'on';
-      guestBtn.className = isGuest ? 'on' : 'off';
-      staffBtn.setAttribute('aria-selected', !isGuest);
-      guestBtn.setAttribute('aria-selected', isGuest);
-
-      // Reset chat and show mode banner message
-      chatEl.innerHTML = '';
-      const banner = isGuest
-        ? `<span class="accent-strong">GUEST MODE</span>: Get more information about the menu, ingredients, and prices.`
-        : `<span class="accent-strong">STAFF MODE</span>: Ask for Recipes, Get Info, or Test your knowledge.`;
-      appendAI(banner);
-    }
-
-    staffBtn.onclick = () => setMode('staff');
-    guestBtn.onclick = () => setMode('guest');
-
-    // ===== Visual Viewport handling =====
-    function setAppHeight(){
-      const h = (window.visualViewport && window.visualViewport.height)
-        ? window.visualViewport.height
-        : window.innerHeight;
-      document.documentElement.style.setProperty('--app-h', `${Math.round(h)}px`);
-    }
-    function setComposerHeight(){
-      const h = composer ? composer.getBoundingClientRect().height : 88;
-      document.documentElement.style.setProperty('--composer-h', `${Math.ceil(h)}px`);
-    }
-    function syncHeights(){
-      setAppHeight();
-      setComposerHeight();
-    }
-    window.addEventListener('resize', syncHeights);
-    window.addEventListener('orientationchange', syncHeights);
-    if (window.visualViewport){
-      window.visualViewport.addEventListener('resize', syncHeights);
-      window.visualViewport.addEventListener('scroll', syncHeights);
-    }
-
-    // First load -> Staff by default (only call once)
-    setMode('staff');
-    syncHeights();
-    setTimeout(syncHeights, 150);
-    setTimeout(syncHeights, 600);
-
-    // Send handler
-    async function send(){
-      const text = (inputEl.value || '').trim();
-      if(!text) return;
-      appendUser(text);
-      inputEl.value = '';
-      sendBtn.disabled = true;
-      try{
-        const res = await fetch('/api/chat', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ query: text, mode })
-        });
-        if(!res.ok){
-          const t = await res.text().catch(()=> '');
-          appendAI(`A server error occurred (${res.status}).`);
-          console.error('API error', res.status, t);
-          return;
-        }
-        const data = await res.json();
-        if (Array.isArray(data.bubbles)) {
-          data.bubbles.forEach(b => appendAI(String(b)));
-        } else {
-          appendAI(data.answer || 'No answer.');
-        }
-      }catch(err){
-        console.error(err);
-        appendAI('Network error. Try again.');
-      } finally {
-  sendBtn.disabled = false;
-  // inputEl.focus();   // ❌ remove this
-  setTimeout(() => inputEl.blur(), 0); // ✅ hide mobile keyboard after send
-}
-
-    }
-
-    // Enter to send
-    inputEl.addEventListener('keydown', (e)=>{
-      if(e.key === 'Enter'){ e.preventDefault(); send(); }
-    });
-    sendBtn.addEventListener('click', send);
-
-    // ===== Voice Input =====
-    const USE_WHISPER = false; // flip true to force Whisper route
-
-    let recognition;     // Web Speech
-    let mediaStream;     // gUM stream
-    let mediaRecorder;   // MediaRecorder
-    let chunks = [];     // audio buffers
-
-    // ----- Path 1: Web Speech API (free, easy) -----
-    function setupWebSpeech(){
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) return false;
-
-      recognition = new SR();
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      recognition.continuous = false;
-
-      recognition.onstart = () => micBtn.classList.add('listening');
-      recognition.onend   = () => micBtn.classList.remove('listening');
-
-      recognition.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        inputEl.value = text;
-        send(); // auto-send after recognition
-      };
-
-      micBtn.onclick = () => {
-        try { recognition.start(); } catch {}
-      };
-
-      return true;
-    }
-
-    // ----- Path 2: Whisper via backend (robust in noise) -----
-    async function startRecording(){
-      mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          noiseSuppression: true,
-          echoCancellation: true,
-          autoGainControl: true,
-        }
-      });
-
-      chunks = [];
-      mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/webm' });
-
-      mediaRecorder.ondataavailable = (e)=>{ if(e.data.size) chunks.push(e.data); };
-      mediaRecorder.onstart = ()=> micBtn.classList.add('recording');
-      mediaRecorder.onstop  = async ()=>{
-        micBtn.classList.remove('recording');
-
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        chunks = [];
-
-        const base64 = await blobToBase64(blob);
-        const res = await fetch('/api/stt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ audio: base64, mime: 'audio/webm' })
-        });
-        const data = await res.json().catch(()=> ({}));
-        if (data?.text){
-          inputEl.value = data.text;
-          send(); // auto-send; change if you prefer manual send
-        } else {
-          appendAI('Couldn’t transcribe that. Try again closer to the mic.');
-        }
-
-        // stop tracks
-        mediaStream.getTracks().forEach(t => t.stop());
-        mediaStream = null;
-      };
-
-      mediaRecorder.start();
-      // safety: auto-stop after 10s
-      setTimeout(()=>{ if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }, 10000);
-    }
-
-    function stopRecording(){
-      if (mediaRecorder && mediaRecorder.state === 'recording'){
-        mediaRecorder.stop();
-      }
-    }
-
-    function blobToBase64(blob){
-      return new Promise((resolve, reject)=>{
-        const reader = new FileReader();
-        reader.onloadend = ()=> resolve(String(reader.result).split(',')[1] || '');
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    function setupWhisper(){
-      if (!navigator.mediaDevices?.getUserMedia){
-        micBtn.style.display = 'none';
-        return false;
-      }
-      // Tap to start, tap again to stop (or auto-stop at 10s)
-      let active = false;
-      micBtn.onclick = async ()=>{
-        try{
-          if(!active){ active = true; await startRecording(); }
-          else { active = false; stopRecording(); }
-        }catch(e){
-          active = false;
-          appendAI('Microphone permission denied.');
-          console.error(e);
-        }
-      };
-      return true;
-    }
-
-    // Init voice path
-    (function initVoice(){
-      if (!USE_WHISPER && setupWebSpeech()) return;
-      setupWhisper();
-    })();
-  </script>
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
 </body>
 </html>

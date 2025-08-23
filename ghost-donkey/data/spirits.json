@@ -1,0 +1,544 @@
+{
+  "SPIRITS": {
+    "Mezcal": {
+      "Amaras Verde": {
+        "price": "$7",
+        "type_category": "Mezcal – Espadín",
+        "agave_variety": "100% Espadín",
+        "region_distillery": "Tlacolula, Oaxaca – Mezcal Amaras",
+        "tasting_notes": "Gentle jasmine, herbal hints, intense smoky cooked agave, sweet caramel finish",
+        "production_notes": "8-year-old agave, conical stone oven, Egyptian mill, pine wood fermentation vats, copper stills",
+        "distillery_brand_identity": "Sustainable practices with a 'From seed to sip' philosophy",
+        "guest_talking_point": "For every agave harvested, 10 are planted; uses various label designs for the same mezcal",
+        "reviews": "Described as approachable with a good amount of smoke, lightly sweet and creamy on the palate, suitable for both sipping and cocktails"
+      },
+      "Bozal Ensamble (Espadín-Mexicano-Barril)": {
+        "price": "$8",
+        "type_category": "Mezcal – Ensamble",
+        "agave_variety": "Espadín, Mexicano, Barril",
+        "region_distillery": "Oaxaca – Bozal",
+        "tasting_notes": "Mint, chocolate chip, slightly nutty, with a balance between savory and sweet",
+        "production_notes": "Wild agaves, small-batch clay and copper distillation",
+        "distillery_brand_identity": "Known for rugged, wild agaves and traditional production methods",
+        "guest_talking_point": "“Bozal” means “wild” — a nod to the wild-harvested agaves used",
+        "reviews": "Praised for its balance between savory and sweet, with notes of mint, chocolate, and herbal undertones. Recognized for its complexity and suitability for both sipping and cocktails"
+      },
+      "Ilegal Joven": {
+        "price": "$11",
+        "type_category": "Mezcal – Espadín, Joven",
+        "agave_variety": "100% Espadín",
+        "region_distillery": "Tlacolula, Oaxaca – Ilegal Mezcal",
+        "tasting_notes": "Deep agave aromas, hints of green apple, citrus, and white pepper",
+        "production_notes": "Copper stills, small-batch distillation",
+        "distillery_brand_identity": "Originally smuggled across the border by bar owners; now owned by Bacardi",
+        "guest_talking_point": "The name “Ilegal” comes from the brand’s underground origins in a Guatemalan bar",
+        "reviews": "Considered a clean and mellow entry-level mezcal with notes of green apple, citrus, and white pepper. Some reviewers note its suitability for cocktails but find it lacks complexity for sipping"
+      },
+      "Koch Elemental": {
+        "price": "$7",
+        "type_category": "Mezcal – Espadín",
+        "agave_variety": "100% Espadín",
+        "region_distillery": "Oaxaca – Koch El Mezcal",
+        "tasting_notes": "Sweet smoke, ripe peaches, mint, garden herbs, pineapple, coconut, roses, green herbs, cinnamon, white pepper",
+        "production_notes": "Sustainable farming, traditional palenque methods",
+        "distillery_brand_identity": "Known for ethical agave sourcing and biodiversity efforts",
+        "guest_talking_point": "Koch works with over 15 indigenous mezcalero families",
+        "reviews": "Noted for its pleasant balance of tropical fruit, smoke, and herbaceous flavors. Recognized as a versatile mezcal suitable for both sipping and cocktails"
+      },
+      "Montelobos Espadín": {
+        "price": "$7",
+        "type_category": "Mezcal – Espadín",
+        "agave_variety": "100% Organic Espadín",
+        "region_distillery": "Santiago Matatlán, Oaxaca – Montelobos",
+        "tasting_notes": "Cooked agave, roasted pineapple and mango, papaya, clean-cut grass, chalk, boiled peanuts, dry citrus, earth, fresh bright herbs, hints of queso fresco and passion fruit",
+        "production_notes": "Organically cultivated agave, conical underground stone pit oven, traditional single stone tahona, wild fermentation in open pine wood vats, copper pot distillation",
+        "distillery_brand_identity": "Created by agave academic Iván Saldaña; committed to sustainability and never using wild agave",
+        "guest_talking_point": "“Montelobos” means “Mountain of Wolves,” symbolizing the wild side of mezcal",
+        "reviews": "Described as a solid Espadín mezcal with a balance of smoke and herbal notes. Considered approachable for newcomers and versatile for cocktails"
+      },
+      "Amarás Americana": {
+        "price": "$12",
+        "type_category": "Mezcal – Ensamble (Agave Americana)",
+        "agave_variety": "100% cultivated Americana agave",
+        "region_distillery": "Tlacolula, Oaxaca – Mezcal Amarás",
+        "tasting_notes": "Bittersweet aroma with notes of roasted banana on the palate and a silky almond finish.",
+        "production_notes": "Artisanal methods; conical stone oven, Egyptian mill, natural fermentation in pinewood vats, double distillation in copper stills",
+        "distillery_brand_identity": "Mezcal Amarás focuses on sustainability and the cultivation of diverse agave species",
+        "guest_talking_point": "Amarás is a pioneer in cultivating Agave Americana, known for its large size and unique sweetness.",
+        "reviews": "Praised for its smooth and aromatic profile, offering a unique twist on traditional mezcal flavors."
+      },
+      "Bozal Espadín-Mexicano-Barril": {
+        "price": "$11",
+        "type_category": "Mezcal – Ensamble (Agave Angustifolia, Rhodacantha, Karwinskii)",
+        "agave_variety": "Blend of Espadín, Mexicano, and Barril agaves",
+        "region_distillery": "San Dionisio y Río de Ejutla, Oaxaca – Bozal Mezcal",
+        "tasting_notes": "Balanced flavors with classic roast agave, mesquite, guajillo peppers, and white pepper.",
+        "production_notes": "Artisanal methods; pit-roasted agave, natural fermentation, double distillation in copper pot stills",
+        "distillery_brand_identity": "Bozal focuses on wild agave varietals and traditional production methods",
+        "guest_talking_point": "Ensamble mezcals combine multiple agave species, offering a complex and layered flavor profile.",
+        "reviews": "Recognized for its complexity and balance, making it a versatile choice for both sipping and cocktails."
+      },
+      "Koch El Mezcal Ensamble": {
+        "price": "$10",
+        "type_category": "Mezcal – Ensamble (Agave Potatorum, Karwinskii)",
+        "agave_variety": "Blend of Tobalá, Tobasiche, Lumbre, and Cirial agaves",
+        "region_distillery": "San Baltazar Guelavila, Oaxaca – Koch El Mezcal",
+        "tasting_notes": "Gentle and balanced with fruity notes of banana, light smoke, and herbs.",
+        "production_notes": "Traditional methods; pit-roasted agave, natural fermentation, double distillation in copper pot stills",
+        "distillery_brand_identity": "Koch El Mezcal is known for its artisanal production and diverse agave expressions",
+        "guest_talking_point": "This ensamble showcases the harmonious blend of multiple wild agaves, each contributing unique characteristics.",
+        "reviews": "Appreciated for its complexity and smoothness, offering a nuanced experience for mezcal enthusiasts."
+      },
+      "Madre Ensamble": {
+        "price": "$10",
+        "type_category": "Mezcal – Ensamble (Agave Angustifolia & Karwinskii)",
+        "agave_variety": "70% Espadín (Angustifolia) and 30% Cuishe (Karwinskii)",
+        "region_distillery": "Oaxaca, Mexico – Madre Mezcal",
+        "tasting_notes": "Subtle smoky notes, accentuated by a sweet earthy fragrance. Herbal notes follow through onto the palate with flavors of sage, minerals, and a lingering floral finish.",
+        "production_notes": "Traditional methods; pit-roasted agave, natural fermentation, double distillation in copper pot stills",
+        "distillery_brand_identity": "Madre Mezcal is a certified Mezcal Artesanal, produced in small batches by various mezcaleros and their families in different parts of Oaxaca",
+        "guest_talking_point": "Madre Mezcal is produced in small batches by various mezcaleros and their families in different parts of Oaxaca, including San Dionisio, Miahuatlán, and Matatlán.",
+        "reviews": "Praised for its balanced flavor profile, offering a harmonious blend of herbal and smoky notes with a smooth finish."
+      },
+      "Madre Ancestral": {
+        "price": "$12",
+        "type_category": "Mezcal – Ensamble (Agave Angustifolia & Karwinskii)",
+        "agave_variety": "Espadín (Angustifolia) and Tobasiche (Karwinskii)",
+        "region_distillery": "Santa Catarina Minas, Oaxaca – Madre Mezcal",
+        "tasting_notes": "Floral notes with a touch of minerality and salinity, accompanied by hints of soil and clay. A smooth finish carries a ripe sweetness with notes of honeydew.",
+        "production_notes": "Ancestral methods; pit-roasted agave, hand-crushed using wooden mallets, natural fermentation in pine vats, double distillation in clay pots",
+        "distillery_brand_identity": "Crafted by Moises Martinez, a third-generation mezcalero from Santa Catarina Minas, known for commitment to traditional methods",
+        "guest_talking_point": "Madre Ancestral is made from a blend of Espadín and Tobasiche agaves, distilled in the ancestral method, resulting in a light and delicate mezcal offering floral notes and a hint of salinity.",
+        "reviews": "Celebrated for its complex flavor profile, offering a rich and long-lasting finish with a blend of floral and mineral tones."
+      },
+      "Real Minero Espadín/Largo": {
+        "price": "$14",
+        "type_category": "Mezcal – Ensamble (Agave Angustifolia & Karwinskii)",
+        "agave_variety": "50% Espadín (Angustifolia) and 50% Largo (Karwinskii)",
+        "region_distillery": "Santa Catarina Minas, Oaxaca – Real Minero",
+        "tasting_notes": "A creamy blend of cultivated and wild agave with a pleasing combination of salt & spice, hints of cantaloupe rind, fresh bark, and citrus zest on the nose, followed by black pepper, celery, and cream cheese on the palate.",
+        "production_notes": "Traditional methods; pit-roasted agave, natural fermentation in open-air wooden vats, double distillation in clay pot stills",
+        "distillery_brand_identity": "Real Minero is considered one of the world’s finest mezcal producers, known for its small clay pot stills and sustainable agave reforestation programs",
+        "guest_talking_point": "Real Minero Espadín y Largo is an Ensamble of wild maguey Largo and cultivated maguey Espadín, traditionally produced in Santa Catarina Minas.",
+        "reviews": "Appreciated for its balanced and round profile, offering a nuanced experience with notes of fresh green herbs, orange blossoms, and wet clay."
+      }
+    },
+    "Tequila": {
+      "Altos Plata": {
+        "price": "$7",
+        "type_category": "Tequila – Blanco",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1111",
+        "tasting_notes": "Sweet cooked agave, herbal notes, citrus, and pepper",
+        "production_notes": "Traditional methods with brick ovens and copper stills",
+        "distillery_brand_identity": "Known for sustainability and fair trade practices",
+        "guest_talking_point": "Developed in collaboration with bartenders for optimal mixability",
+        "reviews": "Praised for its balance and versatility in cocktails, offering good value for its price point"
+      },
+      "Cazadores Blanco": {
+        "price": "$6",
+        "type_category": "Tequila – Blanco",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Arandas, Jalisco – NOM 1487",
+        "tasting_notes": "Bright citrus, fresh agave, with hints of mint and black pepper",
+        "production_notes": "Stainless steel fermentation tanks, double distillation",
+        "distillery_brand_identity": "Established in 1922, known for its traditional methods",
+        "guest_talking_point": "\"Cazadores\" means \"hunters,\" reflecting the brand's heritage",
+        "reviews": "Recognized for its crisp and clean profile, making it a staple in many bars"
+      },
+      "Espolon Blanco": {
+        "price": "$7",
+        "type_category": "Tequila – Blanco",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1440",
+        "tasting_notes": "Sweet agave, tropical fruit, lemon zest, with a hint of pepper",
+        "production_notes": "Column still distillation, aged for a short period to enhance flavors",
+        "distillery_brand_identity": "Known for its vibrant label art celebrating Mexican culture",
+        "guest_talking_point": "Espolon means \"spur,\" symbolizing the fight for independence",
+        "reviews": "Appreciated for its smoothness and versatility, suitable for both sipping and mixing"
+      },
+      "Mi Campo Blanco": {
+        "price": "$6",
+        "type_category": "Tequila – Blanco",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila Valley, Jalisco – NOM 1438",
+        "tasting_notes": "Cooked agave, banana, coconut, almonds, sweet orange, green apple",
+        "production_notes": "Rested in French oak barrels previously used for Chardonnay",
+        "distillery_brand_identity": "Modern approach with artistic bottle design",
+        "guest_talking_point": "\"Mi Campo\" translates to \"My Field,\" reflecting pride in agave cultivation",
+        "reviews": "Noted for its smoothness and subtle complexity, offering a unique twist on traditional blanco tequilas"
+      },
+      "Pasote Blanco": {
+        "price": "$8",
+        "type_category": "Tequila – Blanco",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Jalisco Highlands – NOM 1579",
+        "tasting_notes": "Cooked agave, jalapeño, bright citrus, with a tingly and bright palate",
+        "production_notes": "Stone oven roasted, fermented in stainless steel, distilled in copper pot stills",
+        "distillery_brand_identity": "Crafted by Master Distiller Felipe Camarena, emphasizing traditional methods",
+        "guest_talking_point": "\"Pasote\" refers to a wild celebration, embodying the spirit's bold character",
+        "reviews": "Celebrated for its robust agave flavor and clean finish, making it a favorite among tequila enthusiasts"
+      },
+      "Terralta Blanco": {
+        "price": "$9",
+        "type_category": "Tequila – Blanco",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1579",
+        "tasting_notes": "Mineral-rich with herbal notes, vibrant citrus, subtle almond, and a gentle touch of alcohol",
+        "production_notes": "Deep well water source, stone/brick ovens, tahona extraction, copper pot stills",
+        "distillery_brand_identity": "Produced by the renowned Camarena family, known for their commitment to quality",
+        "guest_talking_point": "\"Terralta\" means \"high land,\" reflecting its highland origin and flavor profile",
+        "reviews": "Acclaimed for its complexity and depth, offering a distinctive highland tequila experience"
+      },
+      "Terralta Reposado": {
+        "price": "$10",
+        "type_category": "Tequila – Reposado",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1579",
+        "tasting_notes": "Sweet agave, vanilla bean, butter, minerals, citrus, with a white pepper finish",
+        "production_notes": "Aged in used American white oak barrels, maintaining a balance between agave and oak",
+        "distillery_brand_identity": "Part of the Camarena family's portfolio, emphasizing traditional craftsmanship",
+        "guest_talking_point": "Offers a harmonious blend of agave purity and subtle oak aging",
+        "reviews": "Highly regarded for its smoothness and nuanced flavors, making it a standout reposado"
+      },
+      "Altos Reposado": {
+        "price": "$8",
+        "type_category": "Tequila – Reposado (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1111",
+        "tasting_notes": "Vanilla, toasted agave, mild oak, citrus",
+        "production_notes": "Aged 6–8 months in oak barrels",
+        "distillery_brand_identity": "Built on traditional techniques and sustainable practices",
+        "guest_talking_point": "Mellow and mixable; an ideal upgrade for guests wanting something smoother",
+        "reviews": "Noted for its warm, well-rounded profile that works well for sipping or mixing"
+      },
+      "Cazadores Reposado": {
+        "price": "$8",
+        "type_category": "Tequila – Reposado (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Arandas, Jalisco – NOM 1487",
+        "tasting_notes": "Warm oak, vanilla, baked agave, cinnamon",
+        "production_notes": "Rested in new American oak barrels for up to 12 months",
+        "distillery_brand_identity": "Known for smooth, classic-style tequila",
+        "guest_talking_point": "Great mid-tier Reposado for those upgrading from blanco",
+        "reviews": "Balanced and comforting; perfect for guests exploring aged tequila without breaking the bank"
+      },
+      "Chamucos Blanco": {
+        "price": "$10",
+        "type_category": "Tequila – Blanco (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1454",
+        "tasting_notes": "Citrus, white pepper, sweet agave, earthy backbone",
+        "production_notes": "Small-batch distillation using stainless and copper stills",
+        "distillery_brand_identity": "Edgy, rebellious brand with a devilish mascot; flavor-forward expressions",
+        "guest_talking_point": "Packs a punch with clean minerality and agave spice",
+        "reviews": "Respected for its bold, clean flavors and strong personality in cocktails or neat"
+      },
+      "Chamucos Reposado": {
+        "price": "$12",
+        "type_category": "Tequila – Reposado (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1454",
+        "tasting_notes": "Toasted oak, cooked agave, spice, caramel",
+        "production_notes": "Aged 6–7 months in ex-bourbon barrels",
+        "distillery_brand_identity": "Fun and fierce — delivers flavor with attitude",
+        "guest_talking_point": "Balanced between punchy agave and smooth oak warmth",
+        "reviews": "A guest favorite for those wanting a spicy, flavorful sipping tequila"
+      },
+      "Chamucos Anejo": {
+        "price": "$13",
+        "type_category": "Tequila – Añejo (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1454",
+        "tasting_notes": "Dark chocolate, dried fruit, toasted oak, rich caramel",
+        "production_notes": "Aged over 12 months in American oak",
+        "distillery_brand_identity": "Aged for depth without sacrificing agave character",
+        "guest_talking_point": "Bold yet smooth — a standout for whiskey fans",
+        "reviews": "Recognized for delivering luxury flavor at a mid-tier price"
+      },
+      "Chamucos Diablo Blanco": {
+        "price": "$12",
+        "type_category": "Tequila – Blanco (Overproof – 110 Proof)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1454",
+        "tasting_notes": "Citrus peel, herbal agave, intense spice and heat",
+        "production_notes": "Bottled at 55% ABV; small batch, high intensity",
+        "distillery_brand_identity": "The “diablo” edition — crafted for bold palates",
+        "guest_talking_point": "Overproof blanco built for fans of spice and high proof spirits",
+        "reviews": "Rave reviews for its fire and flavor — great for bartenders and agave heads alike"
+      },
+      "Clase Azul Reposado": {
+        "price": "$34",
+        "type_category": "Tequila – Reposado (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila Valley, Jalisco – NOM 1416",
+        "tasting_notes": "Vanilla cream, toffee, soft spice, baked agave",
+        "production_notes": "Aged 8 months in American oak barrels",
+        "distillery_brand_identity": "Iconic ceramic bottle; ultra-premium status symbol",
+        "guest_talking_point": "Often gifted; synonymous with celebration and luxury",
+        "reviews": "Known for smooth, rich sipping — dessert-like and indulgent"
+      },
+      "Clase Azul Anejo": {
+        "price": "$36",
+        "type_category": "Tequila – Añejo (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila Valley, Jalisco – NOM 1595",
+        "tasting_notes": "Spiced caramel, fig, roasted agave, almond",
+        "production_notes": "Aged 25 months in American whiskey barrels",
+        "distillery_brand_identity": "Handmade decanter and elite aging process",
+        "guest_talking_point": "Rare, collectible — often called the “liquid gold” of tequila",
+        "reviews": "Revered for its smoothness, depth, and stunning bottle — a showstopper pour"
+      },
+      "Cuervo Reserva De La Familia Extra Anejo": {
+        "price": "$21",
+        "type_category": "Tequila – Extra Añejo (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila Valley, Jalisco – NOM 1122",
+        "tasting_notes": "Toasted almonds, vanilla, tobacco, rich oak, dark fruit",
+        "production_notes": "Aged a minimum of 3 years in American and French oak barrels",
+        "distillery_brand_identity": "Jose Cuervo’s top-shelf offering, produced since 1995",
+        "guest_talking_point": "A multi-vintage blend; each bottle is hand-numbered",
+        "reviews": "Considered a top-tier extra añejo — complex, luxurious, and perfect for sipping"
+      },
+      "El Tequileño Reposado Gran Reserva": {
+        "price": "$12",
+        "type_category": "Tequila – Reposado (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila Valley, Jalisco – NOM 1108",
+        "tasting_notes": "Vanilla, oak, honey, roasted agave, pepper",
+        "production_notes": "Aged 8 months in American oak barrels",
+        "distillery_brand_identity": "A classic distillery since 1959, with a focus on traditional, additive-free tequila",
+        "guest_talking_point": "A bartender favorite — complex enough for sipping, bold enough for cocktails",
+        "reviews": "Beloved for its high quality and robust flavor at an accessible price point"
+      },
+      "El Tequileño Platinum": {
+        "price": "$8",
+        "type_category": "Tequila – Blanco (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila Valley, Jalisco – NOM 1108",
+        "tasting_notes": "Cooked agave, white pepper, subtle anise, citrus",
+        "production_notes": "Fermented with the distillery’s own yeast strain",
+        "distillery_brand_identity": "Known as the “Tequila Lovers’ Tequila”",
+        "guest_talking_point": "The perfect blanco for high-end cocktails or a classic margarita",
+        "reviews": "Clean, crisp, and pure — a bartender’s secret weapon"
+      },
+      "Espolon Blanco": {
+        "price": "$7",
+        "type_category": "Tequila – Blanco (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1440",
+        "tasting_notes": "Sweet agave, tropical fruit, lemon zest, hint of pepper",
+        "production_notes": "Column still, aged for a short period to enhance flavors",
+        "distillery_brand_identity": "Known for vibrant label art celebrating Mexican culture",
+        "guest_talking_point": "Espolon means “spur” — symbolizing the fight for independence",
+        "reviews": "Appreciated for its smoothness and versatility; suitable for both sipping and mixing"
+      },
+      "Espolon Reposado": {
+        "price": "$8",
+        "type_category": "Tequila – Reposado (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1440",
+        "tasting_notes": "Caramel, roasted agave, vanilla, oak, and spice",
+        "production_notes": "Aged 6 months in new American oak barrels",
+        "distillery_brand_identity": "Accessible and artful; a popular, flavorful Reposado",
+        "guest_talking_point": "Adds a hint of sweetness and complexity to a classic margarita",
+        "reviews": "A top-selling, crowd-pleasing Reposado that offers great value"
+      },
+      "Herradura Silver": {
+        "price": "$9",
+        "type_category": "Tequila – Blanco (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Amatitán, Jalisco – NOM 1119",
+        "tasting_notes": "Cooked agave, citrus, herbal notes, black pepper",
+        "production_notes": "Proprietary yeast strain, double distillation",
+        "distillery_brand_identity": "A historic brand, known for its iconic horseshoe logo and traditional techniques",
+        "guest_talking_point": "Uses a unique process of fermentation that gives it a clean, agave-forward character",
+        "reviews": "A classic for a reason — known for its robust flavor and reliability"
+      },
+      "Herradura Reposado": {
+        "price": "$11",
+        "type_category": "Tequila – Reposado (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Amatitán, Jalisco – NOM 1119",
+        "tasting_notes": "Sweet oak, vanilla, butter, and cooked agave",
+        "production_notes": "Aged 11 months in American oak barrels",
+        "distillery_brand_identity": "Pioneered the Reposado category; a benchmark for the style",
+        "guest_talking_point": "Aged longer than the industry standard, resulting in a richer flavor",
+        "reviews": "A smooth, oak-forward Reposado that's a perfect sipper"
+      },
+      "Maestro Dobel Diamante": {
+        "price": "$12",
+        "type_category": "Tequila – Cristalino (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Jalisco – NOM 1122",
+        "tasting_notes": "Caramel, toasted oak, vanilla, and a peppery finish",
+        "production_notes": "A blend of Reposado, Añejo, and Extra Añejo, filtered to remove color",
+        "distillery_brand_identity": "Known for innovation and elegant, clear aged tequilas",
+        "guest_talking_point": "The original Cristalino — the flavor of aged tequila with the look of a blanco",
+        "reviews": "Popular for its unique profile; smooth, easy-drinking, and visually appealing"
+      },
+      "Mi Campo Blanco": {
+        "price": "$6",
+        "type_category": "Tequila – Blanco (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila Valley, Jalisco – NOM 1438",
+        "tasting_notes": "Cooked agave, banana, coconut, almonds, sweet orange, green apple",
+        "production_notes": "Rested in French oak barrels previously used for Chardonnay",
+        "distillery_brand_identity": "Modern approach with artistic bottle design",
+        "guest_talking_point": "\"Mi Campo\" translates to \"My Field,\" reflecting pride in agave cultivation",
+        "reviews": "Noted for its smoothness and subtle complexity; offers a unique twist on traditional blanco tequilas"
+      },
+      "Ocho Plata": {
+        "price": "$11",
+        "type_category": "Tequila – Blanco (Single-Estate Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1474",
+        "tasting_notes": "Agave, cooked squash, green olives, salty brine, mint, citrus",
+        "production_notes": "Single-estate, vintage-dated tequila; each batch tastes different",
+        "distillery_brand_identity": "Celebrated for expressing agave terroir; an “agave whisperer”",
+        "guest_talking_point": "Tastes like the place the agave was grown",
+        "reviews": "A favorite of agave purists; known for its bold, honest, and complex character"
+      },
+      "Ocho Reposado": {
+        "price": "$12",
+        "type_category": "Tequila – Reposado (Single-Estate Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Los Altos, Jalisco – NOM 1474",
+        "tasting_notes": "Mild oak, vanilla, baked apple, subtle spice",
+        "production_notes": "Aged 8 months in ex-American whiskey barrels",
+        "distillery_brand_identity": "Each vintage reflects the terroir of a single agave field",
+        "guest_talking_point": "A showcase of how a little aging can elevate agave flavors",
+        "reviews": "Highly regarded for its clean, expressive, and versatile profile"
+      },
+      "Pasote Blanco": {
+        "price": "$11",
+        "type_category": "Tequila – Blanco (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Jalisco Highlands – NOM 1579",
+        "tasting_notes": "Cooked agave, jalapeño, bright citrus, with a tingly and bright palate",
+        "production_notes": "Stone oven roasted, fermented in stainless steel, distilled in copper pot stills",
+        "distillery_brand_identity": "Crafted by Master Distiller Felipe Camarena, emphasizing traditional methods",
+        "guest_talking_point": "\"Pasote\" refers to a wild celebration, embodying the spirit's bold character",
+        "reviews": "Celebrated for its robust agave flavor and clean finish; a favorite among tequila enthusiasts"
+      },
+      "Santera Blanco": {
+        "price": "$9",
+        "type_category": "Tequila – Blanco (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila, Jalisco – NOM 1563",
+        "tasting_notes": "Sweet agave, citrus peel, white pepper, subtle spice",
+        "production_notes": "Fermented with classical music for a unique flavor profile",
+        "distillery_brand_identity": "A modern, small-batch brand with a focus on art and tradition",
+        "guest_talking_point": "A clean, smooth, and easy-to-sip blanco with a unique story",
+        "reviews": "Praised for its smoothness and approachable flavor — a great entry point into premium blanco"
+      },
+      "Santera Reposado": {
+        "price": "$11",
+        "type_category": "Tequila – Reposado (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila, Jalisco – NOM 1563",
+        "tasting_notes": "Caramel, vanilla, toasted oak, honey",
+        "production_notes": "Aged up to 6 months in American oak barrels",
+        "distillery_brand_identity": "A blend of traditional methods and modern flair",
+        "guest_talking_point": "The perfect balance of agave and oak; great for sipping or adding depth to a cocktail",
+        "reviews": "Smooth and versatile; offers a creamy mouthfeel and a long finish"
+      },
+      "Tequila Komos Reposado Rosa": {
+        "price": "$29",
+        "type_category": "Tequila – Reposado Rosa (100% Blue Weber Agave)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Tequila Valley, Jalisco – NOM 1110",
+        "tasting_notes": "Red berries, cherry, vanilla, butterscotch, hints of spice",
+        "production_notes": "Aged in French oak red wine barrels",
+        "distillery_brand_identity": "Luxury brand known for its distinctive pink hue and silky texture",
+        "guest_talking_point": "The color comes from the red wine barrels; offers a unique, fruity flavor",
+        "reviews": "Celebrated for its smooth, sweet profile; a unique, high-end sipping tequila"
+      }
+    },
+    "Gin": {
+      "Gracias a Dios Agave Gin": {
+        "price": "$8",
+        "type_category": "Gin – Agave-based",
+        "agave_variety": "100% Espadín agave",
+        "region_distillery": "Oaxaca – Gracias a Dios",
+        "tasting_notes": "Sweet herbs, citrus, delicate florals, roasted agave, earthy jasmine green tea",
+        "production_notes": "Base spirit distilled from Espadín agave, re-distilled with 32 botanicals",
+        "distillery_brand_identity": "Known for sustainable practices and unique, complex flavors",
+        "guest_talking_point": "The only gin made from 100% agave; an ideal choice for guests who want to try a twist on gin",
+        "reviews": "Praised for its complexity and unique blend of agave and juniper flavors. Smooth and balanced for both cocktails and sipping"
+      }
+    },
+    "Sotol": {
+      "Quechol Sotol Wheeleri": {
+        "price": "$8",
+        "type_category": "Sotol (Dasylirion wheeleri)",
+        "agave_variety": "100% wild Dasylirion wheeleri (Desert Spoon)",
+        "region_distillery": "Chihuahuan Desert, Durango – Quechol Sotol",
+        "tasting_notes": "Bright vegetal aromas lead to lemon rind, bay leaf, and chipotle spice. On the palate, fresh jalapeños give way to delicate sweet notes of anise and black licorice. The finish is round and balanced, with subtle vegetal notes.",
+        "production_notes": "Traditional methods; pit-roasted Dasylirion, natural fermentation, double distillation in copper pot stills",
+        "distillery_brand_identity": "Quechol is made in small batches using time-honored traditions passed down from one generation of sotoleros to the next.",
+        "guest_talking_point": "Wheeleri piñas average 65-70 lbs at harvest and take about 15 years to mature, contributing to the depth of flavor in the spirit.",
+        "reviews": "Praised for its mild and tame profile with prominent and juicy flavors of black licorice, offering a round and balanced finish with subtle vegetal notes."
+      },
+      "Quechol Sotol Texanum": {
+        "price": "$8",
+        "type_category": "Sotol (Dasylirion texanum)",
+        "agave_variety": "100% wild Dasylirion texanum",
+        "region_distillery": "Chihuahuan Desert, Durango – Quechol Sotol",
+        "tasting_notes": "Opens with exotic succulent aromas and spearmint, followed by roasted nuts, ancho chile, and cooked caramel. On the palate, mild and tame with prominent and juicy flavors of black licorice. The finish is round and balanced with subtle vegetal notes.",
+        "production_notes": "Traditional methods; pit-roasted Dasylirion, natural fermentation, double distillation in copper pot stills",
+        "distillery_brand_identity": "Quechol is made in small batches using time-honored traditions passed down from one generation of sotoleros to the next.",
+        "guest_talking_point": "Texanum is one of the biggest Dasylirion plants, with piñas averaging 110-130 lbs at harvest and taking about 15 years to mature.",
+        "reviews": "Recognized for its mild, grassy aromas leading into a bright and vegetal palate showing fresh-cut grass, bell pepper, and dill, with a brisk and crisp finish."
+      }
+    },
+    "Raicilla": {
+      "La Venenosa Raicilla Costa": {
+        "price": "$11",
+        "type_category": "Raicilla (Agave Rhodacantha)",
+        "agave_variety": "100% wild Agave Rhodacantha",
+        "region_distillery": "Costa de Jalisco, Cabo Corrientes – La Venenosa",
+        "tasting_notes": "Aromatically dense and savory with notes of nuts, pine, mastic, olive brine, sawdust, cedar, and cocoa. The palate offers bright acidity with flavors of olive, resin, wine-like tannins, yuzu, herbs, terracotta, cedar, and fresh carrot.",
+        "production_notes": "Traditional methods; pit-roasted agave, natural fermentation, double distillation in copper pot stills",
+        "distillery_brand_identity": "La Venenosa was created by Chef Esteban Morales to bring these hidden jewels to the global market, sourcing from different Maestro Taberneros in distinct regions.",
+        "guest_talking_point": "Raicilla was historically produced to avoid taxes levied by the Spanish crown, leading to diverse regional styles and unique flavor profiles.",
+        "reviews": "Celebrated for its complex and evolving flavor profile, offering a unique experience with each sip."
+      },
+      "La Venenosa Raicilla Sierra Volcanes": {
+        "price": "$12",
+        "type_category": "Raicilla (Agave Cenizo Gigante)",
+        "agave_variety": "100% wild Agave Cenizo Gigante",
+        "region_distillery": "Sierra Volcanes, Jalisco – La Venenosa",
+        "tasting_notes": "Aroma of berries and earth-cooked agave. The palate offers flavors of green apple, pomegranate, and smoke, with a structured, bitter, long, and dry texture.",
+        "production_notes": "Traditional methods; pit-roasted agave, natural fermentation, double distillation in clay pot stills",
+        "distillery_brand_identity": "La Venenosa was created by Chef Esteban Morales to bring these hidden jewels to the global market, sourcing from different Maestro Taberneros in distinct regions.",
+        "guest_talking_point": "The Sierra Volcanes region is home to the oldest known traditions of distillation in Mexico, contributing to the unique characteristics of this Raicilla.",
+        "reviews": "Praised for its earthy and fruity profile, offering a complex and intriguing tasting experience."
+      },
+      "La Venenosa Raicilla Sierra Del Tigre": {
+        "price": "$14",
+        "type_category": "Raicilla (Agave Inaequidens)",
+        "agave_variety": "100% wild Agave Inaequidens",
+        "region_distillery": "Sierra Del Tigre, Jalisco – La Venenosa",
+        "tasting_notes": "Aromas of aged gouda, orange, mango, herbs, barnyard notes, and agave pulp. The palate is lush and creamy with lactic notes and citrus, leading into minerality and deep spice.",
+        "production_notes": "Traditional methods; pit-roasted agave, natural fermentation, single distillation in ceramic Filipino stills",
+        "distillery_brand_identity": "La Venenosa was created by Chef Esteban Morales to bring these hidden jewels to the global market, sourcing from different Maestro Taberneros in distinct regions.",
+        "guest_talking_point": "Production is limited to 700 liters per year, making this Raicilla extremely rare and sought after.",
+        "reviews": "Celebrated for its unique and funky profile, offering a rich and creamy tasting experience with complex flavors."
+      }
+    },
+    "Destilado de Agave": {
+      "Santaleza Las Reservas": {
+        "price": "$20",
+        "type_category": "Destilado de Agave (100% Agave Spirit)",
+        "agave_variety": "100% Blue Weber Agave",
+        "region_distillery": "Jalisco, Mexico – Santaleza",
+        "tasting_notes": "The nose greets you with a rich tapestry of aromas, including roasted agave, dried fruits, vanilla, and a whisper of toasted oak. On the palate, it unfolds a velvety harmony of flavors—caramelized agave, dark chocolate, warm baking spices, and hints of citrus zest. The extended aging imparts a deep, nuanced character while maintaining the soul of the agave plant. Its finish is long, smooth, and perfectly balanced, leaving a lingering impression of oak, sweet spice, and earthy elegance.",
+        "production_notes": "Aged four years in oak and rested five in stainless steel, resulting in a 9-year-old extra añejo expression.",
+        "distillery_brand_identity": "Santaleza is known for its commitment to traditional methods and producing high-quality, artisanal agave spirits.",
+        "guest_talking_point": "This extra añejo expression showcases the depth and complexity that can be achieved through extended aging, offering a luxurious sipping experience.",
+        "reviews": "Celebrated for its rich and complex flavor profile, offering a harmonious balance of sweet, spicy, and earthy notes."
+      }
+    }
+  }
+}

@@ -1,0 +1,241 @@
+:root{
+  --bg:#f9e7e7;
+  --accent:#ee4d36;
+  --teal:#55c4bb;
+  --text:#09080a;
+  --muted:#f3d9d9;
+  --maxw:640px;
+  --border:2px;
+  --radius:0;             /* square corners */
+  --app-h: 100vh;         /* updated via JS to visible viewport height */
+  --composer-h: 88px;     /* updated via JS to input bar height */
+}
+
+/* No page scroll; only chat scrolls */
+html,body{
+  height:100%;
+  margin:0;
+  background:var(--muted);
+  color:var(--text);
+  overflow:hidden;
+  font-family:"Futura PT", Futura, "Avenir Next", Avenir, Arial, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+.app{
+  height:var(--app-h);           /* visible viewport height (handles mobile keyboard) */
+  max-width:var(--maxw);
+  margin:0 auto;
+  padding-inline: clamp(16px, 4vw, 40px);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  box-sizing:border-box;
+  overscroll-behavior:contain;
+}
+
+/* ===== Top bar (sticky) ===== */
+.topbar{
+  position:sticky;
+  top:env(safe-area-inset-top, 0);
+  z-index:10;
+  background:transparent;
+  display:grid;
+  grid-template-columns: 1fr auto; /* title left, toggle right */
+  align-items:center;
+  gap:12px;
+  padding:8px 0 2px;
+}
+
+/* ===== Brand ===== */
+.brand{
+  display:inline-flex;                 /* sit content in a single row */
+  align-items:baseline;                /* align to text baseline */
+  gap:10px;
+  margin:0;
+  line-height:1.05;
+  font-weight:700;
+  font-size: 2rem;                     /* title size */
+  letter-spacing:.3px;
+  white-space:nowrap;                  /* prevent wrapping */
+}
+.brand .title{
+  font-weight:900;
+  color:var(--teal);
+  text-shadow:-3px 3px 0 var(--accent);
+  letter-spacing:1px;
+}
+.brand .brandmark{
+  height:1em;                          /* match text height */
+  width:auto;
+  object-fit:contain;
+  display:inline-block;
+  vertical-align:baseline;             /* align with text baseline */
+  transform: translateY(0.03em);       /* tiny nudge for optical alignment */
+  image-rendering:auto;
+}
+@media (max-width:768px){
+  .brand{ font-size:1.6rem; }          /* scales both text & logo together */
+}
+
+/* ===== Toggle ===== */
+.toggle{
+  display:inline-flex;
+  border:var(--border) solid var(--accent);
+  padding:3px;
+  gap:4px;
+  background:var(--bg);
+  border-radius:4px;
+}
+.toggle button{
+  all:unset;
+  padding:8px 12px;
+  font-size:.75rem;
+  font-weight:700;
+  cursor:pointer;
+  color:var(--text);
+  border-radius:4px;
+}
+@media (max-width:560px){
+  .toggle button{ padding:6px 8px; font-size:.75rem; }
+}
+.toggle .on{ background:var(--teal); color:#fff; }
+.toggle .off{ background:transparent; color:var(--accent); }
+
+.accent-strong{ color:var(--accent); font-weight:800; }
+
+/* ===== Divider ===== */
+.divider{
+  flex:0 0 auto;
+  display:block;
+  width:100%;
+  height:auto;
+  margin:6px 0 6px;
+  object-fit:contain;
+}
+/* Keep divider visible on mobile (was previously hidden) */
+@media (max-width:560px){
+  .divider{ margin:4px 0; }
+}
+
+/* ===== Chat panel (fills remaining height) ===== */
+.panel{
+  flex:1 1 auto;
+  min-height:0; /* critical to allow inner scroll to size */
+  border:var(--border) solid var(--accent);
+  border-radius:4px;
+  background:var(--bg);
+  padding: clamp(14px, 2vw, 20px);
+  overflow:hidden; /* wrapper has no scrollbars */
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  margin-bottom: 1rem; /* buffer handled by sticky input padding */
+}
+
+/* Only this scrolls */
+.scroll{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  padding-right:4px; /* space for scrollbar */
+  /* keep last message clear of the sticky input bar */
+  padding-bottom: calc(var(--composer-h) + 16px);
+}
+
+/* Messages */
+.msg{
+  margin:10px 0;
+  font-size:clamp(15px, 1.15vw, 18px);
+  line-height:1.35;
+}
+.msg.user{
+  padding:8px;
+  border-bottom:var(--border) solid var(--accent);
+  border-top:var(--border) solid var(--accent);
+  border-radius:var(--radius);
+  margin-left:auto;
+  max-width:min(720px, 90%);
+  background:transparent;
+}
+.accent-teal{ color:var(--teal); font-weight:800; }
+
+/* ===== Input bar (sticky bottom) ===== */
+.inputbar{
+  position:sticky;
+  bottom:0;
+  z-index:10;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  background:var(--bg); /* ensure solid behind inputs on iOS */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.inputbar .field{
+  flex:1 1 auto; min-width:0; /* prevents wrapping */
+  display:flex; align-items:center; gap:10px;
+  border:var(--border) solid var(--accent);
+  border-radius:4px;
+  background:var(--bg);
+  padding:8px 10px;
+}
+.field input{
+  all:unset;
+  flex:1 1 auto; min-width:0;
+  font-size:clamp(15px, 1.1vw, 17px);
+  line-height:1.2;
+  color:var(--text);
+}
+.field{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+/* Mic button */
+.mic{
+  all:unset;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+  height:28px;
+  width:28px;
+}
+.mic.listening{ color:var(--accent); }
+.mic.recording{ color:var(--teal); }
+
+.mic img, .send img {
+  display:block;
+  height:24px;
+  width:24px;
+}
+
+/* Send button */
+.send{
+  flex:0 0 auto;
+  height:40px;
+  width:40px;
+  border:var(--border) solid var(--accent);
+  background:var(--accent);
+  color:#fff;
+  border-radius:4px;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+}
+.send:disabled{ opacity:.55; cursor:not-allowed; }
+
+.hint{
+  font-size:clamp(12px, .95vw, 14px);
+  text-align:center;
+  padding-top:6px;
+  padding-bottom:6px;
+}
+.hint .b{ color:var(--teal); font-weight:800; }
+.hint .a{ color:var(--accent); font-weight:800; }
+
+/* Desktop horizontal breathing */
+@media (min-width:1100px){
+  .app{ padding-inline:56px; }
+}

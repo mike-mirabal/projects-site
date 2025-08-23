@@ -1,0 +1,516 @@
+{
+  "Vodka Mami": {
+    "ingredients": [
+      "Weber Ranch Vodka",
+      "Guava Nectar",
+      "Ancho Reyes Verde",
+      "Lime",
+      "Soda"
+    ],
+    "build": [
+      "1.5 oz Vodka",
+      "0.5 oz Ancho Reyes Verde",
+      "0.25 oz Simple Syrup",
+      "0.5 oz Pineapple Juice",
+      "0.25 oz Lime Juice",
+      "1 oz Guava Syrup",
+      "0.25 oz Agave (Monin)",
+      "Top with Mineragua"
+    ],
+    "batchBuild": [
+      "2.25 oz Vodka Mami Batch",
+      "1 oz Guava Nectar",
+      "0.5 oz Pineapple Juice",
+      "0.25 oz Lime Juice",
+      "3 oz Jarritos Mineragua"
+    ],
+    "price": "$14",
+    "glass": "Tall, Collins",
+    "garnish": ["Poblano Slice", "Mint Sprig", "Lime Half Wheel"],
+    "comparison": "Fruity Vodka Soda",
+    "character": "Light, Bright, Refreshing, Easy",
+    "story": "Ghost Donkey Original Cocktail Recipe.",
+    "notes": "This is the “basic bitch” drink. It’s a fruity vodka soda."
+  },
+  "Mezcal Sun-Risa": {
+    "ingredients": [
+      "Pasote Blanco Tequila",
+      "Bozal Ensamble Mezcal",
+      "Bitter Orange",
+      "Hibiscus",
+      "Habanero"
+    ],
+    "build": [
+      "0.75 oz Tequila Pasote Blanco",
+      "0.75 oz Mezcal Bozal Ensamble",
+      "0.75 oz Habanero/Hibiscus Syrup",
+      "4 oz Bitter OJ"
+    ],
+    "batchBuild": [
+      "5 oz Bitter OJ",
+      "1.5 oz Sunrisa Batch"
+    ],
+    "price": "$15",
+    "glass": "Hi-Ball / Collins",
+    "garnish": ["Dried Orange Chip"],
+    "comparison": "Tequila Sunrise",
+    "character": "Sweet and Spicy, Citrusy Tang, Rich, Velvety",
+    "story": "Ghost Donkey NYC Original Cocktail, created by Nacho Jiminez. Riff on a Tequila Sunrise using house Habanero + Hibiscus syrup.",
+    "notes": "Make sure the float looks good. Orange juice is spiked with lemon to increase bitterness (bitter orange)."
+  },
+  "Mushroom Margarita": {
+    "ingredients": [
+      "Huitlacoche‑infused Montelobos Mezcal Espadín",
+      "Nixta Licor de Elote",
+      "Agave",
+      "Lime"
+    ],
+    "build": [
+      "2 oz Mezcal Huitlacoche",
+      "0.5 oz Nixta",
+      "0.25 oz Agave (Monin)",
+      "0.5 oz Lime Juice"
+    ],
+    "batchBuild": [
+      "0.5 oz Lime Juice",
+      "2.5 oz Mushroom Batch"
+    ],
+    "price": "$16",
+    "glass": "Crystal Rocks",
+    "garnish": ["Sal de Gusano Half Rim"],
+    "comparison": "Tommy’s Margarita (with mushrooms)",
+    "character": "Funky and savory; classic margarita balanced with umami from the huitlacoche",
+    "story": "Ghost Donkey NYC Original by Nacho Jiminez.",
+    "notes": "Huitlacoche is a prized corn fungus; Sal de Gusano is a smoky, earthy Oaxacan staple traditionally paired with mezcal."
+  },
+  "Altos Paloma": {
+    "ingredients": [
+      "Altos Plata Tequila",
+      "Lime",
+      "Jarritos Grapefruit Soda"
+    ],
+    "build": [
+      "1.5 oz Tequila Altos Plata",
+      "0.75 oz Lime Juice",
+      "6 oz Jarritos Grapefruit"
+    ],
+    "price": "$14",
+    "glass": "Tall, Collins / Hi-Ball",
+    "garnish": ["Citrus Salt", "Grapefruit Slice"],
+    "comparison": "Paloma",
+    "character": "Citrusy, Refreshing, Classic",
+    "story": "Classic Paloma; safe order for less daring guests."
+  },
+  "La Chispa": {
+    "ingredients": [
+      "Amaras Verde Mezcal",
+      "Mango Shrub",
+      "Lemon",
+      "Ginger Beer"
+    ],
+    "build": [
+      "1.5 oz Mezcal Amaras Verde",
+      "1.5 oz Mango Shrub",
+      "0.25 oz Lemon Juice",
+      "2 oz Fever Tree Ginger Beer"
+    ],
+    "price": "$14",
+    "glass": "Coupe",
+    "garnish": ["Orange Chip", "Cilantro Leaf"],
+    "comparison": "Mezcal Sour / Citrus Drop",
+    "story": "Created by Austin Taylor (Ghost Donkey Omaha). Summer‑vibes riff inspired by an early blackberry shrub smash."
+  },
+  "La Mora Carajillo": {
+    "ingredients": [
+      "Ilegal Mezcal Joven",
+      "Blackberry",
+      "Giffard Café du Honduras",
+      "Mint‑infused Cold Brew"
+    ],
+    "build": [
+      "1.5 oz Mezcal Ilegal Joven",
+      "1 oz Blackberry Syrup",
+      "0.5 oz Giffard Café du Honduras",
+      "1 oz Mint‑Infused Cold Brew"
+    ],
+    "batchBuild": [
+      "3 oz Carajillo Batch",
+      "1 oz Mint Cold Brew"
+    ],
+    "price": "$15",
+    "glass": "Stacked Rocks / Crystal Rocks",
+    "garnish": ["Dried Orange Wheel", "Blackberry", "Mint Sprig"],
+    "comparison": "Carajillo / Reposado Espresso Martini",
+    "character": "Sweet and potent, rich, bittersweet",
+    "notes": "Created by Jordan Dean (Ghost Donkey Phoenix). Blackberries are a major Mexican import; pairs well with coffee."
+  },
+  "Corazon De Melon": {
+    "ingredients": [
+      "Gracias A Dios Gin",
+      "Midori",
+      "Agua de Sandía",
+      "Lime",
+      "Agave (optional)"
+    ],
+    "build": [
+      "0.5 oz Midori (layer first)",
+      "1.5 oz Gracias A Dios Gin",
+      "3 oz Agua de Sandía",
+      "0.75 oz Lime Juice"
+    ],
+    "price": "$14",
+    "glass": "Hi-Ball / Tall, Collins",
+    "garnish": ["Hibiscus Salt Rim", "Lime Quarter Wheel"],
+    "character": "Summery, light, refreshing, thirst‑quenching",
+    "translation": "Heart of Melon; ‘Sweetheart’",
+    "notes": "Created by Mayra Becerra (Ghost Donkey Phoenix)."
+  },
+  "Pistolero": {
+    "ingredients": [
+      "Espolòn Blanco Tequila",
+      "Ancho Reyes Verde",
+      "Roasted Poblano + Pineapple Sherbet",
+      "Lime"
+    ],
+    "build": [
+      "2 oz Tequila",
+      "0.25 oz Ancho Reyes Verde",
+      "0.75 oz Poblano Sherbet",
+      "0.75 oz Lime Juice"
+    ],
+    "batchBuild": [
+      "0.5 oz Lime Juice",
+      "3 oz Pistolero Batch"
+    ],
+    "price": "$15",
+    "glass": "Crystal Rocks",
+    "garnish": ["Citrus Salt Rim", "Poblano Slice"],
+    "comparison": "Spicy Margarita",
+    "character": "Sweet and spicy",
+    "story": "Ghost Donkey NYC Original. Standout is the cold‑processed sherbet for bright flavor.",
+    "translation": "Gunman, Shooter"
+  },
+  "Burro Tropical": {
+    "ingredients": [
+      "Uruapan Charanda Blended Rum",
+      "Terralta Blanco Tequila",
+      "Chinola Passion Fruit",
+      "Calpico",
+      "Lemon",
+      "Ginger Beer"
+    ],
+    "build": [
+      "1.5 oz Tequila",
+      "0.5 oz Rum",
+      "0.75 oz Chinola",
+      "0.5 oz Simple Syrup",
+      "0.75 oz Calpico",
+      "0.75 oz Lemon Juice",
+      "0.5 oz Jarritos Mineragua"
+    ],
+    "batchBuild": [
+      "0.75 oz Calpico",
+      "0.75 oz Lemon Juice",
+      "3 oz Burro Batch",
+      "0.5 oz Jarritos Mineragua"
+    ],
+    "price": "$16",
+    "glass": "Tall, Collins",
+    "garnish": ["Mint Sprig", "Mini Donkey", "Umbrella Pick"],
+    "comparison": "Tiki drinks, Zombie",
+    "character": "Spirited, fruity, tangy passion fruit",
+    "story": "Ghost Donkey original NY cocktail; notable split base of rum and tequila."
+  },
+  "Highland Picnic": {
+    "ingredients": [
+      "Koch Elemental Mezcal",
+      "Terralta Reposado Tequila",
+      "Yuzu",
+      "Lime",
+      "Agave",
+      "Egg White"
+    ],
+    "build": [
+      "1 oz Mezcal",
+      "1 oz Tequila",
+      "0.5 oz Agave (Monin)",
+      "0.5 oz Simple Syrup",
+      "0.5 oz Lime Juice",
+      "0.5 oz Yuzu Juice",
+      "1 oz Egg White"
+    ],
+    "batchBuild": [
+      "0.5 oz Lime Juice",
+      "0.5 oz Yuzu Juice",
+      "1 - 1.5 oz Egg White",
+      "3 oz Highland Batch"
+    ],
+    "price": "$15",
+    "glass": "Coupe",
+    "garnish": ["Half Orange Chip", "Hibiscus Salt"],
+    "comparison": "Scotch Sour",
+    "character": "Sweet, smoky, creamy, tart",
+    "story": "Ghost Donkey NYC Original",
+    "allergens": ["Egg"]
+  },
+  "Oaxacan Beet": {
+    "ingredients": [
+      "Dill + Mint Infused Montelobos Mezcal Espadín",
+      "Red Beet",
+      "Lime",
+      "Agave",
+      "Saline"
+    ],
+    "build": [
+      "1.5 oz Dill & Mint Mezcal",
+      "2 oz Beet Juice",
+      "0.5 oz Lime Juice",
+      "0.5 oz Agave (Monin)"
+    ],
+    "price": "$15",
+    "glass": "Stacked Rocks",
+    "garnish": ["Dried Orange Wheel", "Dill Sprig"],
+    "comparison": "Nothing like it",
+    "character": "Funky, savory, earthy, unique, rich",
+    "story": "Ghost Donkey Original Cocktail"
+  },
+  "Moda Antigua": {
+    "ingredients": [
+      "Abasolo Mexican Whisky",
+      "Tamarind",
+      "Mole Bitters",
+      "Orange"
+    ],
+    "build": [
+      "1.5 oz Whiskey Abasolo Mexican",
+      "0.5 oz Agave (Monin)",
+      "0.25 oz Alchemist Tamarindo",
+      "4 dashes Xocotatl Mole Bitters"
+    ],
+    "price": "$16",
+    "glass": "Stacked Rocks",
+    "garnish": ["Orange Peel", "Citrus Salt"],
+    "comparison": "Old Fashioned",
+    "character": "Silky, spirited, rich, classic",
+    "translation": "Old Fashioned"
+  },
+  "Moda Antigua (306)": {
+    "ingredients": [
+      "Pōkeno Origin Whiskey",
+      "Tamarind",
+      "Mole Bitters",
+      "Orange"
+    ],
+    "build": [
+      "1.5 oz Whiskey Pokeno Origin",
+      "0.5 oz Agave (Monin)",
+      "0.25 oz Alchemist Tamarindo",
+      "8 dashes Xocotatl Mole Bitters"
+    ],
+    "price": "$16",
+    "glass": "Crystal Rocks",
+    "garnish": ["Orange Peel", "Citrus Salt"],
+    "comparison": "Old Fashioned",
+    "character": "Silky, spirited, rich, classic"
+  },
+  "GD House Marg": {
+    "ingredients": [
+      "Mi Campo Blanco Tequila",
+      "Lime",
+      "Triple Sec",
+      "Agave"
+    ],
+    "build": [
+      "1.5 oz Tequila Mi Campo Blanco",
+      "1 oz Lime Juice",
+      "0.5 oz Triple Sec",
+      "0.5 oz Agave Syrup"
+    ],
+    "price": "$—",
+    "glass": "Slushy Rocks",
+    "garnish": ["Salt Rim", "Lime Wedge"]
+  },
+  "GD House Marg Mezcal": {
+    "ingredients": [
+      "Ilegal Mezcal",
+      "Agave",
+      "Triple Sec",
+      "Lime"
+    ],
+    "build": [
+      "1.5 oz Mezcal Ilegal",
+      "0.5 oz Agave (Monin)",
+      "0.5 oz Triple Sec",
+      "1 oz Lime Juice"
+    ],
+    "price": "$—",
+    "glass": "Slushy Rocks",
+    "garnish": ["Salt Rim", "Lime Moon"]
+  },
+  "GD Oaxacan Old Fashioned": {
+    "ingredients": [
+      "Ilegal Joven Mezcal",
+      "Agave",
+      "Bitters (Angostura)"
+    ],
+    "build": [
+      "2 oz Mezcal Ilegal Joven",
+      "0.5 oz Agave (Monin)",
+      "6 dashes (0.15 oz) Angostura Bitters"
+    ],
+    "price": "$—",
+    "glass": "Crystal Rocks",
+    "garnish": ["Orange Peel"]
+  },
+  "Killer Bee": {
+    "ingredients": [
+      "Base not listed (house mix)",
+      "Lemon",
+      "Bee Pollen"
+    ],
+    "build": [
+      "0.5 oz Lemon Juice",
+      "3.25 oz Killer Bee Mix",
+      "1 barspoon Bee Pollen"
+    ],
+    "price": "$—",
+    "glass": "Coupe",
+    "garnish": ["Lemon Chip"]
+  },
+  "Carajillo": {
+    "ingredients": [
+      "Ilegal Reposado Mezcal",
+      "Licor 43",
+      "Spicy Agave (Monin)",
+      "Galliano Espresso",
+      "Cold Brew"
+    ],
+    "build": [
+      "1.5 oz Mezcal Ilegal Reposado",
+      "1 oz Licor 43",
+      "0.5 oz Spicy Agave (Monin)",
+      "0.5 oz Galliano Espresso",
+      "1.5 oz Cold Brew"
+    ],
+    "price": "$—",
+    "glass": "Coupe",
+    "garnish": ["Orange Twist", "3 Coffee Beans"]
+  },
+  "Stealth Margarita (frozen)": {
+    "ingredients": [
+      "Cazadores Blanco Tequila",
+      "St. Germain",
+      "Cucumber",
+      "Lime",
+      "Chili (Tajin)"
+    ],
+    "build": [
+      "7 oz Stealth Marg Mix (for slushie build) or blend tequila, St. Germain, cucumber, lime, Tajin to spec"
+    ],
+    "batchBuild": [
+      "7 oz Stealth Marg Mix (slushie)",
+      "Shot: 2 oz Stealth Marg Mix (Vaso Veladora)"
+    ],
+    "price": "$13",
+    "glass": "Stacked Rocks (slushie) / Vaso Veladora (shot)",
+    "garnish": ["Tajin Cucumber Slice"],
+    "comparison": "Frozen Margarita",
+    "character": "Frozen, refreshing, summery, light",
+    "story": "Ghost Donkey NYC Original Cocktail"
+  },
+  "Stone Wall": {
+    "ingredients": [
+      "Tequila (unspecified)",
+      "Sombra Mezcal",
+      "Pomegranate Liqueur",
+      "Habanero Cider",
+      "Fever Tree Ginger Beer"
+    ],
+    "build": [
+      "1 oz Tequila",
+      "0.5 oz Mezcal Sombra",
+      "0.5 oz Pomegranate Liqueur",
+      "4 oz Habanero Cider",
+      "2 oz Fever Tree Ginger Beer"
+    ],
+    "price": "$—",
+    "glass": "Mule Mug",
+    "garnish": ["Fanned Apple Slices"]
+  },
+  "Mexican Candy (Shot)": {
+    "ingredients": [
+      "Mi Campo Blanco Tequila",
+      "Lime",
+      "DeKuyper Watermelon Pucker",
+      "Tajin",
+      "Valentina Hot Sauce"
+    ],
+    "build": [
+      "1 oz Tequila Mi Campo Blanco",
+      "0.5 oz Lime Juice",
+      "0.5 oz DK Watermelon Pucker",
+      "Rim with Tajin",
+      "Dash Valentina Hot Sauce"
+    ],
+    "price": "$—",
+    "glass": "Stacking Rocks",
+    "garnish": ["1/2 Tajin Rim"]
+  },
+  "Al Pastor (NA)": {
+    "ingredients": [
+      "Pineapple",
+      "Achiote",
+      "Lime",
+      "Taco Seasoning",
+      "Cilantro"
+    ],
+    "build": [
+      "2 oz Dole Pineapple Juice",
+      "0.75 oz Lime Juice",
+      "1.5 oz Achiote-Piña Syrup",
+      "1 tsp Taco Seasoning"
+    ],
+    "price": "$13",
+    "glass": "Rocks",
+    "garnish": ["Half Salt Rim", "Lime Half Wheel", "Cilantro Bush"],
+    "comparison": "Savory Margarita",
+    "character": "Tart, refreshing, savory, unique",
+    "story": "Inspired by al pastor tacos—roasted pineapple smothered in achiote, charred to a savory finish.",
+    "translation": "Literal: “shepherd style.”"
+  },
+  "Lavender Sour (NA)": {
+    "ingredients": [
+      "Lavender",
+      "Yuzu",
+      "Honey",
+      "Vanilla"
+    ],
+    "build": [
+      "1.5 oz Yuzu Juice",
+      "1.5 oz Iconic Lavender Flower",
+      "1.5 oz Vanilla Honey Syrup"
+    ],
+    "price": "$10",
+    "glass": "Coupe",
+    "garnish": ["Dried Lemon Wheel"],
+    "comparison": "Waterlily / Aviation (sweeter)",
+    "character": "Floral, citrusy, rich, refreshing",
+    "story": "FRG Original Non‑Alcoholic Cocktail"
+  },
+  "Burro Fresca (NA)": {
+    "ingredients": [
+      "Cucumber Lime Agua Fresca",
+      "Ginger Beer",
+      "Mint"
+    ],
+    "build": [
+      "3 oz Agua Fresca GD",
+      "3 oz Fever Tree Ginger Beer"
+    ],
+    "price": "$10",
+    "glass": "Tall, Collins",
+    "garnish": ["Cucumber Slice", "Mint Sprig"],
+    "story": "Ghost Donkey Original Non‑Alcoholic Cocktail",
+    "translation": "Donkey Agua Fresca"
+  }
+}
