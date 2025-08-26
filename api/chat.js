@@ -13,6 +13,8 @@
 // - COCKTAILS_JSON             (optional legacy)
 // - SPIRITS_JSON               (optional legacy)
 
+const USE_DB = process.env.USE_DB === '1'; // leave unset for now so DB is off 
+
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req, res) {
