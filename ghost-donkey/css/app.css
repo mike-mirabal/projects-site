@@ -152,9 +152,7 @@ html,body{
   font-size:clamp(15px, 1.15vw, 18px);
   line-height:1.25;
 }
-.msg.li {
-  line height: 1;
-}
+
 
 .msg.user{
   padding:8px;
