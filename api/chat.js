@@ -66,29 +66,34 @@ export default async function handler(req, res) {
       }
     }
 
-    // 3) Start run
-    let runId = null;
-    {
-      const r = await fetch(`${API}/threads/${threadId}/runs`, {
-        method: "POST",
-        headers: HEADERS_JSON,
-        body: JSON.stringify({
-          assistant_id: assistantId,
-          instructions:
-            mode === "guest"
-              ? "MODE: GUEST. Answer conversationally using only guest-facing info from files. Never reveal staff recipes, builds, or staff notes."
-              : "MODE: STAFF. Include single/batch builds and presentation when asked. Default to guest-style descriptions unless explicitly requested.",
-          tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
-        }),
-      });
-      if (!r.ok) {
-        const t = await r.text().catch(()=> "");
-        return res.status(502).json({ threadId, error: "Failed to start run", detail: t });
-      }
-      const run = await r.json();
-      runId = run.id; // should look like "run_..."
-      if (!runId) return res.status(502).json({ threadId, error: "No run id returned" });
-    }
+   // 3) Start run (force file_search tool; disallow general knowledge)
+let runId = null;
+{
+  const r = await fetch(`${API}/threads/${threadId}/runs`, {
+    method: "POST",
+    headers: HEADERS_JSON,
+    body: JSON.stringify({
+      assistant_id: assistantId,
+      instructions:
+        mode === "guest"
+          ? "MODE: GUEST. Use file_search only. Do NOT answer from general knowledge. If nothing is found in files, say you can’t find it in your files and offer a different item."
+          : "MODE: STAFF. Use file_search only. Do NOT answer from general knowledge. If nothing is found in files, say you can’t find it in your files and offer a different item. Format per staff rules.",
+      tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
+      // ↓ Require tools so the model can’t answer without retrieval
+      tool_choice: { type: "file_search" }, // or: "required"
+      // Optional: make it more deterministic
+      temperature: 0.2
+    }),
+  });
+  if (!r.ok) {
+    const t = await r.text().catch(()=> "");
+    return res.status(502).json({ threadId, error: "Failed to start run", detail: t });
+  }
+  const run = await r.json();
+  runId = run.id;
+  if (!runId) return res.status(502).json({ threadId, error: "No run id returned" });
+}
+
 
     // 4) Poll run until completed
     const TIMEOUT_MS = 30_000;
