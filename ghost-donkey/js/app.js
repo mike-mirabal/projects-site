@@ -1,9 +1,6 @@
-// Minimal front-end for Path A (File Search)
-// - No local JSON bootstrapping
-// - Keeps a threadId for multi-turn context
-// - Sends { query, mode, threadId } to /api/chat
+// ===== Spirit Guide (Path A: Assistants + Vector Stores) =====
 
-// ===== UI elements =====
+// UI elements
 const chatEl   = document.getElementById('chat');
 const inputEl  = document.getElementById('input');
 const sendBtn  = document.getElementById('send');
@@ -12,8 +9,9 @@ const staffBtn = document.getElementById('staffBtn');
 const composer = document.getElementById('composer');
 const micBtn   = document.getElementById('mic');
 
-let mode = 'staff'; // 'guest' | 'staff'
-let threadId = null; // preserve conversation state with the API
+// State
+let mode = 'staff';       // 'guest' | 'staff'
+let threadId = null;      // persist conversation (server returns this)
 
 // Render helpers
 function nl2br(htmlish){
@@ -46,9 +44,9 @@ function setMode(next){
   staffBtn.setAttribute('aria-selected', String(!isGuest));
   guestBtn.setAttribute('aria-selected', String(isGuest));
 
-  // Reset chat and show mode banner message
+  // Reset conversation thread on mode switch
+  threadId = null;
   chatEl.innerHTML = '';
-  threadId = null; // new conversation thread per mode
   const banner = isGuest
     ? `<span class="accent-strong">GUEST MODE</span>: Ask about menu items, ingredients, prices, and pairings.`
     : `<span class="accent-strong">STAFF MODE</span>: Ask for builds, presentation, or quiz yourself.`;
@@ -58,7 +56,7 @@ function setMode(next){
 staffBtn.onclick = () => setMode('staff');
 guestBtn.onclick = () => setMode('guest');
 
-// ===== Visual Viewport handling =====
+// Visual viewport handling (mobile safe)
 function setAppHeight(){
   const h = (window.visualViewport && window.visualViewport.height)
     ? window.visualViewport.height
@@ -69,10 +67,7 @@ function setComposerHeight(){
   const h = composer ? composer.getBoundingClientRect().height : 88;
   document.documentElement.style.setProperty('--composer-h', `${Math.ceil(h)}px`);
 }
-function syncHeights(){
-  setAppHeight();
-  setComposerHeight();
-}
+function syncHeights(){ setAppHeight(); setComposerHeight(); }
 window.addEventListener('resize', syncHeights);
 window.addEventListener('orientationchange', syncHeights);
 if (window.visualViewport){
@@ -80,30 +75,30 @@ if (window.visualViewport){
   window.visualViewport.addEventListener('scroll', syncHeights);
 }
 
-// First load -> Staff by default
+// First load
 setMode('staff');
 syncHeights();
 setTimeout(syncHeights, 150);
 setTimeout(syncHeights, 600);
 
-// ===== Send handler =====
+// ----- Send handler (Path A payload: { query, mode, threadId }) -----
 async function send(){
   const text = (inputEl.value || '').trim();
   if(!text) return;
 
   appendUser(text);
   inputEl.value = '';
-  inputEl.blur();
+  inputEl.blur();               // hide mobile keyboard
   sendBtn.disabled = true;
 
   try{
     const res = await fetch('/api/chat', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({
         query: text,
         mode,
-        threadId, // keep multi-turn context
+        threadId,               // reuse if present
       })
     });
 
@@ -115,9 +110,11 @@ async function send(){
     }
 
     const data = await res.json();
+
+    // Save returned threadId for multi-turn context
     if (data.threadId) threadId = data.threadId;
 
-    if (Array.isArray(data.bubbles) && data.bubbles.length) {
+    if (Array.isArray(data.bubbles) && data.bubbles.length){
       data.bubbles.forEach(b => appendAI(String(b)));
     } else {
       appendAI(data.answer || 'No answer.');
@@ -136,7 +133,7 @@ inputEl.addEventListener('keydown', (e)=>{
 });
 sendBtn.addEventListener('click', send);
 
-// ===== Voice Input (Web Speech API) =====
+// ----- Voice Input (Web Speech API) -----
 (function setupVoice(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR || !micBtn) return;
@@ -155,7 +152,5 @@ sendBtn.addEventListener('click', send);
     send(); // auto-send
   };
 
-  micBtn.onclick = () => {
-    try { recognition.start(); } catch {}
-  };
+  micBtn.onclick = () => { try { recognition.start(); } catch {} };
 })();
