@@ -1,7 +1,4 @@
 // /api/chat.js
-// Path A: OpenAI File Search
-// ENV: OPENAI_API_KEY, GD_ASSISTANT_ID, GD_GUEST_VS, GD_STAFF_VS
-
 import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -11,76 +8,78 @@ const client = new OpenAI({
 
 export default async function handler(req, res) {
   try {
-    // --- CORS / preflight (handy for local testing) ---
-    if (req.method === "OPTIONS") {
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-      return res.status(204).end();
-    }
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
-
-    // ---------- Parse request ----------
-    const { query, mode: rawMode, threadId } = req.body || {};
+    const { query, mode: rawMode, threadId: incomingThreadId } = req.body || {};
     const mode = rawMode === "staff" ? "staff" : "guest";
     const message = (query || "").toString().trim();
     if (!message) return res.status(400).json({ error: "Missing query" });
 
-    // ---------- Env checks ----------
     const assistantId = process.env.GD_ASSISTANT_ID;
     const vsGuest = process.env.GD_GUEST_VS;
     const vsStaff = process.env.GD_STAFF_VS;
     if (!assistantId || !vsGuest || !vsStaff) {
       return res.status(500).json({
-        error:
-          "Missing env vars. Set GD_ASSISTANT_ID, GD_GUEST_VS, GD_STAFF_VS in Vercel.",
+        error: "Missing env vars. Set GD_ASSISTANT_ID, GD_GUEST_VS, GD_STAFF_VS in Vercel.",
       });
     }
 
-    const vector_store_id = mode === "staff" ? vsStaff : vsGuest;
+    const vectorStoreId = mode === "staff" ? vsStaff : vsGuest;
 
-    // ---------- Thread ----------
-    const thread = threadId ? { id: threadId } : await client.beta.threads.create();
+    // 1) Ensure we have a thread id
+    let threadId = incomingThreadId;
+    if (!threadId) {
+      const created = await client.beta.threads.create();
+      threadId = created?.id;
+      if (!threadId) {
+        return res.status(502).json({ error: "Failed to create thread" });
+      }
+    }
 
-    // Add the user message
-    await client.beta.threads.messages.create(thread.id, {
+    // 2) Add the user message
+    await client.beta.threads.messages.create(threadId, {
       role: "user",
       content: message,
     });
 
-    // ---------- Run with selected vector store ----------
-    const run = await client.beta.threads.runs.create(thread.id, {
+    // 3) Start the run
+    const run = await client.beta.threads.runs.create(threadId, {
       assistant_id: assistantId,
-      // tighten behavior per mode
       instructions:
         mode === "guest"
           ? `MODE: GUEST. Answer conversationally using only guest-facing info from files. Do NOT reveal recipes, builds, batch specs, or staff notes. If asked for those, decline politely.`
           : `MODE: STAFF. You may include single/batch builds and presentation details when requested. Default to a guest-friendly description unless the user explicitly asks for staff details.`,
-      tool_resources: { file_search: { vector_store_ids: [vector_store_id] } },
+      tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
     });
 
-    // ---------- Poll until completed (with timeout) ----------
-    const started = Date.now();
-    const TIMEOUT_MS = 30_000; // 30s
+    // Some SDKs also return run.thread_id; keep a robust fallback
+    const pollThreadId = threadId ?? run?.thread_id;
+    const runId = run?.id;
+    if (!pollThreadId || !runId) {
+      return res.status(502).json({
+        error: "Run did not return valid ids",
+        detail: { threadId: pollThreadId, runId },
+      });
+    }
+
+    // 4) Poll until completed (with timeout)
+    const start = Date.now();
+    const TIMEOUT_MS = 30000;
     while (true) {
-      const r = await client.beta.threads.runs.retrieve(thread.id, run.id);
+      const r = await client.beta.threads.runs.retrieve(pollThreadId, runId);
       if (["completed", "failed", "cancelled", "expired"].includes(r.status)) {
         if (r.status !== "completed") {
           return res.status(502).json({
-            threadId: thread.id,
+            threadId: pollThreadId,
             error: `Run ${r.status}`,
             detail: r.last_error?.message || "Assistant run did not complete successfully.",
           });
         }
         break;
       }
-      if (Date.now() - started > TIMEOUT_MS) {
+      if (Date.now() - start > TIMEOUT_MS) {
         return res.status(504).json({
-          threadId: thread.id,
+          threadId: pollThreadId,
           error: "Timeout",
           detail: "Assistant run exceeded timeout.",
         });
@@ -88,10 +87,9 @@ export default async function handler(req, res) {
       await new Promise((r) => setTimeout(r, 550));
     }
 
-    // ---------- Collect last assistant message ----------
-    const msgs = await client.beta.threads.messages.list(thread.id, { order: "asc" });
+    // 5) Read last assistant message
+    const msgs = await client.beta.threads.messages.list(pollThreadId, { order: "asc" });
     const last = msgs.data.at(-1);
-
     let answer = "";
     if (last?.content?.length) {
       const parts = [];
@@ -100,14 +98,14 @@ export default async function handler(req, res) {
       }
       answer = parts.join("\n\n");
     }
-
     const bubbles = answer ? [answer] : ["I couldn't find that in my files yet."];
 
-    return res.status(200).json({ threadId: thread.id, bubbles, answer });
+    return res.status(200).json({ threadId: pollThreadId, bubbles, answer });
   } catch (e) {
     console.error("API error:", e);
-    return res
-      .status(500)
-      .json({ error: "Server error", detail: String(e).slice(0, 500) });
+    return res.status(500).json({
+      error: "Server error",
+      detail: String(e && e.error?.message ? e.error.message : e).slice(0, 500),
+    });
   }
 }
