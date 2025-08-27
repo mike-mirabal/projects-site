@@ -274,7 +274,7 @@ html,body{
 #staffModal h3 { margin: 0 0 8px 0; font-size: 16px; letter-spacing: .02em; }
 #staffModal label { font-size: 13px; opacity: .9; display: block; margin-bottom: 8px; }
 #staffModal input {
-  width: 100%; padding: 12px 12px; border-radius: 10px; border: 1px solid #333; background: #0c0c0c; color: #fff;
+  width: 80%; padding: 12px 12px; border-radius: 10px; border: 1px solid #333; background: #0c0c0c; color: #fff;
 }
 #staffModal .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 #staffModal button {
