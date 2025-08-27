@@ -263,24 +263,76 @@ html,body{
 .hint .a{ color:var(--accent); font-weight:800; }
 
 /* Staff password modal */
+/* Staff password modal */
 #staffModal {
-  position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.35); z-index: 9999;
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.35);
+  z-index: 9999;
+  padding: 12px; /* prevent edge clipping on small screens */
 }
+
+#staffModal * {
+  box-sizing: border-box; /* keep widths sane */
+}
+
 #staffModal .card {
-  background: #111; color: #fff; width: min(85vw, 400px); border-radius: 16px; padding: 18px 16px;
+  background: #111;
+  color: #fff;
+  width: min(92vw, 420px); /* a touch wider & safer */
+  border-radius: 16px;
+  padding: 18px 16px;
   box-shadow: 0 10px 30px rgba(0,0,0,.5);
 }
-#staffModal h3 { margin: 0 0 8px 0; font-size: 16px; letter-spacing: .02em; }
-#staffModal label { font-size: 13px; opacity: .9; display: block; margin-bottom: 8px; }
+
+#staffModal h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  letter-spacing: .02em;
+}
+
+#staffModal label {
+  font-size: 13px;
+  opacity: .9;
+  display: block;
+  margin-bottom: 8px;
+}
+
 #staffModal input {
-  width: 80%; padding: 12px 12px; border-radius: 10px; border: 1px solid #333; background: #0c0c0c; color: #fff;
+  display: block;
+  width: 100%;          /* full width inside the card */
+  padding: 12px 12px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  background: #0c0c0c;
+  color: #fff;
 }
-#staffModal .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+
+#staffModal .row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+  flex-wrap: wrap;      /* avoid button overflow on tiny screens */
+}
+
 #staffModal button {
-  padding: 10px 14px; border-radius: 10px; border: 0; background: #1f1f1f; color: #fff; cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 0;
+  background: #1f1f1f;
+  color: #fff;
+  cursor: pointer;
 }
-#staffModal button.primary { background: var(--accent) color: #061617; font-weight: 600;}
+
+#staffModal button.primary {
+  background: var(--accent);  /* <-- fixed: add semicolon */
+  color: #061617;
+  font-weight: 600;
+}
 
 
 /* Desktop horizontal breathing */
