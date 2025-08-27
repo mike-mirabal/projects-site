@@ -1,4 +1,4 @@
-// /api/chat.js — Assistants v2 via REST with strict staff formatting, staff pass gate, and sanitization
+// /api/chat.js — Assistants v2 via REST with strict formatting, staff pass gate, sanitization, and Google Sheet logging
 
 const API = "https://api.openai.com/v1";
 const HEADERS_JSON = {
@@ -6,6 +6,7 @@ const HEADERS_JSON = {
   "Content-Type": "application/json",
   "OpenAI-Beta": "assistants=v2",
 };
+const SHEET_WEBHOOK_URL = process.env.SHEET_WEBHOOK_URL || "";
 
 // ---- helpers ----
 function stripCitations(html) {
@@ -39,7 +40,6 @@ function ensureHtmlDashLists(html) {
 }
 function ensureHtmlQuantityLists(html) {
   // Convert runs of “ingredient-ish” lines into <ul><li>…</li></ul>
-  // e.g., "1.5 oz Vodka", "Top with 3 oz Soda", "0.25 oz Lime Juice"
   const isQty = (s) => /^\s*(?:\d+(\.\d+)?\s*oz\b|top with\b|add\b|splash\b|dash\b|barspoon\b|rinse\b|fill\b)/i.test(s);
   const lines = (html || "").split("\n");
   const out = [];
@@ -71,6 +71,29 @@ function sanitize(html) {
   s = ensureHtmlQuantityLists(s);
   s = collapseWhitespace(s);
   return s;
+}
+
+// Turn thread messages into a plain transcript text block (for the Sheet)
+function buildTranscript(messages) {
+  // messages: { data: [ { role: 'user'|'assistant', content: [ {type:'text', text:{value}} ] }, ... ] }
+  const lines = [];
+  for (const m of (messages?.data || [])) {
+    const role = m.role === "user" ? "User" : "Bot";
+    let text = "";
+    for (const c of (m.content || [])) {
+      if (c.type === "text" && c.text?.value) text += (text ? "\n" : "") + c.text.value;
+    }
+    // Normalize bubble delimiters to newlines so CSV is readable
+    text = text.replace(/<!--\s*BUBBLE\s*-->/gi, "\n\n");
+    // Keep it plain text in the log (strip most tags but preserve visible content)
+    // Very light strip: remove tags while keeping text
+    const plain = text
+      .replace(/<\/?[^>]+>/g, '')     // strip HTML tags
+      .replace(/\s+\n/g, '\n')
+      .trim();
+    if (plain) lines.push(`${role}: ${plain}`);
+  }
+  return lines.join("\n\n");
 }
 
 export default async function handler(req, res) {
@@ -169,14 +192,15 @@ export default async function handler(req, res) {
       await new Promise((r2) => setTimeout(r2, 600));
     }
 
-    // 5) Read last assistant message
+    // 5) Read messages (for both response + logging)
     const msgsRes = await fetch(`${API}/threads/${threadId}/messages?order=asc`, {
       headers: { "Authorization": HEADERS_JSON.Authorization, "OpenAI-Beta": "assistants=v2" },
     });
     if (!msgsRes.ok) return res.status(502).json({ threadId, error: "Failed to list messages", detail: await msgsRes.text().catch(()=> "") });
     const msgs = await msgsRes.json();
-    const last = msgs.data?.[msgs.data.length - 1];
 
+    // Build answer from last assistant message
+    const last = msgs.data?.[msgs.data.length - 1];
     let answer = "";
     if (last?.content?.length) {
       const parts = [];
@@ -194,6 +218,24 @@ export default async function handler(req, res) {
     }
     if (!bubbles.length && answer) bubbles = [sanitize(answer)];
     if (!bubbles.length) bubbles = ["I couldn't find that in my files yet."];
+
+    // 6) Log the entire conversation to Google Sheet (best-effort)
+    if (SHEET_WEBHOOK_URL) {
+      try {
+        const transcript = buildTranscript(msgs);
+        await fetch(SHEET_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode,
+            threadId,
+            dialogue: transcript,
+          }),
+        });
+      } catch (logErr) {
+        console.warn("Logging to Google Sheet failed:", logErr);
+      }
+    }
 
     return res.status(200).json({ threadId, bubbles, answer: bubbles.join("\n\n") });
   } catch (e) {
