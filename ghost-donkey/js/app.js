@@ -10,8 +10,30 @@ const composer = document.getElementById('composer');
 const micBtn   = document.getElementById('mic');
 
 // State
-let mode = 'staff';       // 'guest' | 'staff'
+let mode = 'guest';       // default to guest
 let threadId = null;      // persist conversation (server returns this)
+let staffToken = localStorage.getItem('gd_staff_token') || null;
+
+// Typing indicator
+let typingEl = null;
+function showTyping() {
+  removeTyping();
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `
+    <div class="typing">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>`;
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  typingEl = div;
+}
+function removeTyping() {
+  if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+  typingEl = null;
+}
 
 // Render helpers
 function nl2br(htmlish){
@@ -53,7 +75,22 @@ function setMode(next){
   appendAI(banner);
 }
 
-staffBtn.onclick = () => setMode('staff');
+// Staff pass prompt
+async function requireStaff() {
+  if (staffToken) return true;
+  const t = prompt("Enter staff passcode:");
+  if (!t) return false;
+  staffToken = t.trim();
+  localStorage.setItem('gd_staff_token', staffToken);
+  return true;
+}
+
+// Wire mode buttons
+staffBtn.onclick = async () => {
+  const ok = await requireStaff();
+  if (!ok) return;          // stay in guest if canceled
+  setMode('staff');
+};
 guestBtn.onclick = () => setMode('guest');
 
 // Visual viewport handling (mobile safe)
@@ -76,12 +113,12 @@ if (window.visualViewport){
 }
 
 // First load
-setMode('staff');
+setMode('guest');
 syncHeights();
 setTimeout(syncHeights, 150);
 setTimeout(syncHeights, 600);
 
-// ----- Send handler (Path A payload: { query, mode, threadId }) -----
+// ----- Send handler (Path A payload: { query, mode, threadId, staffToken }) -----
 async function send(){
   const text = (inputEl.value || '').trim();
   if(!text) return;
@@ -90,6 +127,7 @@ async function send(){
   inputEl.value = '';
   inputEl.blur();               // hide mobile keyboard
   sendBtn.disabled = true;
+  showTyping();
 
   try{
     const res = await fetch('/api/chat', {
@@ -99,8 +137,11 @@ async function send(){
         query: text,
         mode,
         threadId,               // reuse if present
+        staffToken,             // gate staff on backend
       })
     });
+
+    removeTyping();
 
     if(!res.ok){
       const t = await res.text().catch(()=> '');
@@ -111,7 +152,7 @@ async function send(){
 
     const data = await res.json();
 
-    // Save returned threadId for multi-turn context
+    // Backend may force mode back to guest if pass invalid (we keep UI state)
     if (data.threadId) threadId = data.threadId;
 
     if (Array.isArray(data.bubbles) && data.bubbles.length){
@@ -121,6 +162,7 @@ async function send(){
     }
   }catch(err){
     console.error(err);
+    removeTyping();
     appendAI('Network error. Try again.');
   }finally{
     sendBtn.disabled = false;

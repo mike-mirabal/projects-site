@@ -1,4 +1,4 @@
-// /api/chat.js — Assistants v2 via REST with strict staff formatting & sanitization
+// /api/chat.js — Assistants v2 via REST with strict staff formatting, staff pass gate, and sanitization
 
 const API = "https://api.openai.com/v1";
 const HEADERS_JSON = {
@@ -86,17 +86,25 @@ export default async function handler(req, res) {
 
     if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-    const { query, mode: rawMode, threadId: incomingThreadId } = req.body || {};
-    const mode = rawMode === "staff" ? "staff" : "guest";
+    const { query, mode: rawMode, threadId: incomingThreadId, staffToken } = req.body || {};
+    let mode = rawMode === "staff" ? "staff" : "guest";
     const message = (query || "").toString().trim();
     if (!message) return res.status(400).json({ error: "Missing query" });
 
     const assistantId = process.env.GD_ASSISTANT_ID;
     const vsGuest = process.env.GD_GUEST_VS;
     const vsStaff = process.env.GD_STAFF_VS;
+    const STAFF_PASS = process.env.GD_STAFF_PASS || "";
+
     if (!process.env.OPENAI_API_KEY || !assistantId || !vsGuest || !vsStaff) {
       return res.status(500).json({ error: "Missing env vars (OPENAI_API_KEY, GD_ASSISTANT_ID, GD_GUEST_VS, GD_STAFF_VS)" });
     }
+
+    // Hard gate staff mode by passcode (force guest if invalid)
+    if (mode === "staff" && (!staffToken || staffToken !== STAFF_PASS)) {
+      mode = "guest";
+    }
+
     const vectorStoreId = mode === "staff" ? vsStaff : vsGuest;
 
     // 1) Ensure thread
@@ -129,10 +137,10 @@ export default async function handler(req, res) {
           assistant_id: assistantId,
           instructions:
             mode === "guest"
-              ? "MODE: GUEST. Use file_search only. Do not reveal staff specs. Two bubbles max: (1) description/price/pairing, (2) short follow-up. No citations. Lists must be <ul><li>…</li></ul> only."
-              : "MODE: STAFF. Use file_search only. **Do not include any guest sections.** EXACTLY three bubbles: (1) Name + <strong>Batch Build</strong> with <ul><li> lines; (2) <strong>Glass/Rim/Garnish</strong>; (3) follow-up asking about Single Build. No narrative outside bubbles. No citations.",
+              ? "MODE: GUEST. Use file_search only. Do not reveal staff specs. Output in HTML only. Two bubbles max: (1) description/price/pairing, (2) short follow-up. No citations. Lists must be <ul><li>…</li></ul> only."
+              : "MODE: STAFF. Use file_search only. Do NOT include any guest sections. EXACTLY three bubbles: (1) Name + <strong>Batch Build</strong> with <ul><li> lines; (2) <strong>Glass/Rim/Garnish</strong>; (3) follow-up asking about Single Build. No narrative outside bubbles. No citations. HTML only; lists must be <ul><li>…</li></ul>.",
           tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
-          tool_choice: { type: "file_search" },
+          tool_choice: { type: "file_search" }, // require retrieval
           temperature: 0.2,
         }),
       });
