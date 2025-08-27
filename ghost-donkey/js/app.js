@@ -1,27 +1,7 @@
-// ===== Data bootstrapping (front-end loads JSON and sends to API) =====
-let cocktailsData = {};
-let spiritsData = {};
-
-async function loadJSON(url) {
-  try {
-    const r = await fetch(url, { cache: "no-store" });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return await r.json();
-  } catch (e) {
-    console.warn(`Failed to load ${url}:`, e);
-    return {};
-  }
-}
-
-(async () => {
-  // Load cocktails & spirits from local files in /data
-  cocktailsData = await loadJSON("../ghost-donkey/data/cocktails.json").then(j => j || {});
-  spiritsData   = await loadJSON("../ghost-donkey/data/spirits.json").then(j => j || {});
-
-  // If index.html is at ghost-donkey/ root, prefer relative (uncomment next two lines)
-  if (!Object.keys(cocktailsData).length) cocktailsData = await loadJSON("data/cocktails.json");
-  if (!Object.keys(spiritsData).length)   spiritsData   = await loadJSON("data/spirits.json");
-})();
+// Minimal front-end for Path A (File Search)
+// - No local JSON bootstrapping
+// - Keeps a threadId for multi-turn context
+// - Sends { query, mode, threadId } to /api/chat
 
 // ===== UI elements =====
 const chatEl   = document.getElementById('chat');
@@ -33,15 +13,14 @@ const composer = document.getElementById('composer');
 const micBtn   = document.getElementById('mic');
 
 let mode = 'staff'; // 'guest' | 'staff'
+let threadId = null; // preserve conversation state with the API
 
 // Render helpers
 function nl2br(htmlish){
-  // Replace **bold** with styled span; convert newlines to <br>
   return (htmlish || '')
     .replace(/\*\*(.+?)\*\*/g, '<span class="accent-teal">$1</span>')
     .replace(/\n/g, '<br>');
 }
-
 function appendAI(text){
   const div = document.createElement('div');
   div.className = 'msg ai';
@@ -69,9 +48,10 @@ function setMode(next){
 
   // Reset chat and show mode banner message
   chatEl.innerHTML = '';
+  threadId = null; // new conversation thread per mode
   const banner = isGuest
-    ? `<span class="accent-strong">GUEST MODE</span>: Get more information about the menu, ingredients, and prices.`
-    : `<span class="accent-strong">STAFF MODE</span>: Ask for Recipes, Get Info, or Test your knowledge.`;
+    ? `<span class="accent-strong">GUEST MODE</span>: Ask about menu items, ingredients, prices, and pairings.`
+    : `<span class="accent-strong">STAFF MODE</span>: Ask for builds, presentation, or quiz yourself.`;
   appendAI(banner);
 }
 
@@ -100,7 +80,7 @@ if (window.visualViewport){
   window.visualViewport.addEventListener('scroll', syncHeights);
 }
 
-// First load -> Staff by default (only call once)
+// First load -> Staff by default
 setMode('staff');
 syncHeights();
 setTimeout(syncHeights, 150);
@@ -113,7 +93,6 @@ async function send(){
 
   appendUser(text);
   inputEl.value = '';
-  // Hide keyboard on mobile after send
   inputEl.blur();
   sendBtn.disabled = true;
 
@@ -124,9 +103,7 @@ async function send(){
       body: JSON.stringify({
         query: text,
         mode,
-        // Pass local JSON to the API so backend can use these instead of env vars
-        cocktails: cocktailsData,
-        spirits: spiritsData
+        threadId, // keep multi-turn context
       })
     });
 
@@ -138,7 +115,9 @@ async function send(){
     }
 
     const data = await res.json();
-    if (Array.isArray(data.bubbles)) {
+    if (data.threadId) threadId = data.threadId;
+
+    if (Array.isArray(data.bubbles) && data.bubbles.length) {
       data.bubbles.forEach(b => appendAI(String(b)));
     } else {
       appendAI(data.answer || 'No answer.');
@@ -148,7 +127,6 @@ async function send(){
     appendAI('Network error. Try again.');
   }finally{
     sendBtn.disabled = false;
-    // Don’t auto-focus to avoid popping keyboard; user taps to bring it back
   }
 }
 
@@ -158,7 +136,7 @@ inputEl.addEventListener('keydown', (e)=>{
 });
 sendBtn.addEventListener('click', send);
 
-// ===== Voice Input (Web Speech API first; fallback could be added later) =====
+// ===== Voice Input (Web Speech API) =====
 (function setupVoice(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR || !micBtn) return;
@@ -174,7 +152,7 @@ sendBtn.addEventListener('click', send);
   recognition.onresult = (e) => {
     const text = e.results[0][0].transcript;
     inputEl.value = text;
-    send(); // auto-send after recognition
+    send(); // auto-send
   };
 
   micBtn.onclick = () => {
