@@ -1,4 +1,4 @@
-// /api/chat.js — Assistants v2 via REST with bubble splitting & HTML cleanup
+// /api/chat.js — Assistants v2 via REST with strict staff formatting & sanitization
 
 const API = "https://api.openai.com/v1";
 const HEADERS_JSON = {
@@ -7,60 +7,70 @@ const HEADERS_JSON = {
   "OpenAI-Beta": "assistants=v2",
 };
 
-// --- helpers ---
+// ---- helpers ----
 function stripCitations(html) {
-  // remove things like  or any 【...】
-  return html.replace(/【[^】]*】/g, "");
+  return (html || "").replace(/【[^】]*】/g, "");
 }
-
-function ensureHtmlLists(html) {
-  // Convert plain-text dash bullets to <ul><li>…</li></ul>
-  // Strategy: for each block of consecutive lines that start with "- ",
-  // wrap them in <ul> and convert each to <li>...</li>.
-  const lines = html.split(/\r?\n/);
+function collapseWhitespace(html) {
+  let s = html || "";
+  s = s.replace(/\r/g, "");
+  s = s.replace(/\n{3,}/g, "\n\n");
+  s = s.replace(/(?:<br\s*\/?>\s*){3,}/gi, "<br><br>");
+  return s.trim();
+}
+function ensureHtmlDashLists(html) {
+  // dash -> ul/li
+  const lines = (html || "").split("\n");
   const out = [];
-  let inList = false;
-  let buffer = [];
-
+  let buf = [];
   const flush = () => {
-    if (buffer.length) {
-      out.push("<ul>");
-      for (const item of buffer) {
-        // remove leading "- " and trim
-        out.push(`<li>${item.replace(/^\s*-\s*/, "").trim()}</li>`);
-      }
-      out.push("</ul>");
-      buffer = [];
-    }
+    if (!buf.length) return;
+    out.push("<ul>");
+    for (const item of buf) out.push(`<li>${item.replace(/^\s*-\s*/, "").trim()}</li>`);
+    out.push("</ul>");
+    buf = [];
   };
-
   for (const line of lines) {
-    if (/^\s*-\s+/.test(line)) {
-      buffer.push(line);
-      inList = true;
-    } else {
-      if (inList) {
-        flush();
-        inList = false;
-      }
+    if (/^\s*-\s+/.test(line)) buf.push(line);
+    else { flush(); out.push(line); }
+  }
+  flush();
+  return out.join("\n");
+}
+function ensureHtmlQuantityLists(html) {
+  // Convert runs of “ingredient-ish” lines into <ul><li>…</li></ul>
+  // e.g., "1.5 oz Vodka", "Top with 3 oz Soda", "0.25 oz Lime Juice"
+  const isQty = (s) => /^\s*(?:\d+(\.\d+)?\s*oz\b|top with\b|add\b|splash\b|dash\b|barspoon\b|rinse\b|fill\b)/i.test(s);
+  const lines = (html || "").split("\n");
+  const out = [];
+  let buf = [];
+  const flush = () => {
+    if (!buf.length) return;
+    out.push("<ul>");
+    for (const item of buf) out.push(`<li>${item.trim()}</li>`);
+    out.push("</ul>");
+    buf = [];
+  };
+  for (const line of lines) {
+    if (isQty(line)) buf.push(line);
+    else {
+      if (buf.length) flush();
       out.push(line);
     }
   }
-  if (inList) flush();
-
+  if (buf.length) flush();
   return out.join("\n");
 }
-
 function sanitize(html) {
   let s = html || "";
-  // remove markdown headings/backticks if any slipped through
+  // remove stray markdown fences/headings
   s = s.replace(/^#{1,6}\s+/gm, "");
   s = s.replace(/```[\s\S]*?```/g, "");
-  // strip citations
   s = stripCitations(s);
-  // normalize lists
-  s = ensureHtmlLists(s);
-  return s.trim();
+  s = ensureHtmlDashLists(s);
+  s = ensureHtmlQuantityLists(s);
+  s = collapseWhitespace(s);
+  return s;
 }
 
 export default async function handler(req, res) {
@@ -74,9 +84,7 @@ export default async function handler(req, res) {
     }
     res.setHeader("Access-Control-Allow-Origin", "*");
 
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
+    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
     const { query, mode: rawMode, threadId: incomingThreadId } = req.body || {};
     const mode = rawMode === "staff" ? "staff" : "guest";
@@ -89,17 +97,12 @@ export default async function handler(req, res) {
     if (!process.env.OPENAI_API_KEY || !assistantId || !vsGuest || !vsStaff) {
       return res.status(500).json({ error: "Missing env vars (OPENAI_API_KEY, GD_ASSISTANT_ID, GD_GUEST_VS, GD_STAFF_VS)" });
     }
-
     const vectorStoreId = mode === "staff" ? vsStaff : vsGuest;
 
     // 1) Ensure thread
     let threadId = incomingThreadId;
     if (!threadId) {
-      const r = await fetch(`${API}/threads`, {
-        method: "POST",
-        headers: HEADERS_JSON,
-        body: JSON.stringify({}),
-      });
+      const r = await fetch(`${API}/threads`, { method: "POST", headers: HEADERS_JSON, body: JSON.stringify({}) });
       if (!r.ok) return res.status(502).json({ error: "Failed to create thread", detail: await r.text().catch(()=> "") });
       const created = await r.json();
       threadId = created.id;
@@ -116,7 +119,7 @@ export default async function handler(req, res) {
       if (!r.ok) return res.status(502).json({ threadId, error: "Failed to add message", detail: await r.text().catch(()=> "") });
     }
 
-    // 3) Start run (force file_search; no freelancing)
+    // 3) Start run (force file_search; strict per-mode instructions)
     let runId = null;
     {
       const r = await fetch(`${API}/threads/${threadId}/runs`, {
@@ -126,10 +129,10 @@ export default async function handler(req, res) {
           assistant_id: assistantId,
           instructions:
             mode === "guest"
-              ? "MODE: GUEST. Use file_search only. Do NOT answer from general knowledge. If nothing is found in files, say you can’t find it in your files and offer a different item."
-              : "MODE: STAFF. Use file_search only. Do NOT answer from general knowledge. If nothing is found in files, say you can’t find it in your files and offer a different item. Format per staff rules.",
+              ? "MODE: GUEST. Use file_search only. Do not reveal staff specs. Two bubbles max: (1) description/price/pairing, (2) short follow-up. No citations. Lists must be <ul><li>…</li></ul> only."
+              : "MODE: STAFF. Use file_search only. **Do not include any guest sections.** EXACTLY three bubbles: (1) Name + <strong>Batch Build</strong> with <ul><li> lines; (2) <strong>Glass/Rim/Garnish</strong>; (3) follow-up asking about Single Build. No narrative outside bubbles. No citations.",
           tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
-          tool_choice: { type: "file_search" }, // require tool use
+          tool_choice: { type: "file_search" },
           temperature: 0.2,
         }),
       });
@@ -149,14 +152,12 @@ export default async function handler(req, res) {
       if (!r.ok) return res.status(502).json({ threadId, error: "Failed to poll run", detail: await r.text().catch(()=> "") });
       const status = await r.json();
       if (["completed", "failed", "cancelled", "expired"].includes(status.status)) {
-        if (status.status !== "completed") {
+        if (status.status !== "completed")
           return res.status(502).json({ threadId, error: `Run ${status.status}`, detail: status.last_error?.message || "" });
-        }
         break;
       }
-      if (Date.now() - start > TIMEOUT_MS) {
+      if (Date.now() - start > TIMEOUT_MS)
         return res.status(504).json({ threadId, error: "Timeout", detail: "Run exceeded timeout" });
-      }
       await new Promise((r2) => setTimeout(r2, 600));
     }
 
@@ -171,13 +172,11 @@ export default async function handler(req, res) {
     let answer = "";
     if (last?.content?.length) {
       const parts = [];
-      for (const c of last.content) {
-        if (c.type === "text" && c.text?.value) parts.push(c.text.value);
-      }
+      for (const c of last.content) if (c.type === "text" && c.text?.value) parts.push(c.text.value);
       answer = parts.join("\n\n");
     }
 
-    // Split into bubbles on HTML delimiter and sanitize each
+    // Split into bubbles & sanitize each
     let bubbles = [];
     if (answer) {
       bubbles = answer
