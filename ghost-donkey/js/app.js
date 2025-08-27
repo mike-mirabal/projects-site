@@ -9,12 +9,105 @@ const staffBtn = document.getElementById('staffBtn');
 const composer = document.getElementById('composer');
 const micBtn   = document.getElementById('mic');
 
-// State
+// ---------- Inject minimal CSS (typing & modal) so this file is self-contained ----------
+(function injectCSS(){
+  const css = `
+  .typing { display:inline-flex; gap:6px; align-items:center; height:1em; }
+  .typing .dot { width:6px; height:6px; border-radius:50%; opacity:.5; animation:bounce 1.2s infinite ease-in-out; }
+  .typing .dot:nth-child(1){ animation-delay:0s; } 
+  .typing .dot:nth-child(2){ animation-delay:.15s; } 
+  .typing .dot:nth-child(3){ animation-delay:.3s; }
+  @keyframes bounce { 0%,80%,100%{ transform:translateY(0); opacity:.5 } 40%{ transform:translateY(-6px); opacity:1 } }
+
+  /* Staff pass modal */
+  #staffModal {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35); z-index: 9999;
+  }
+  #staffModal .card {
+    background: #111; color: #fff; width: min(92vw, 420px); border-radius: 16px; padding: 18px 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5);
+  }
+  #staffModal h3 { margin: 0 0 8px 0; font-size: 16px; letter-spacing: .02em; }
+  #staffModal label { font-size: 13px; opacity: .9; display: block; margin-bottom: 8px; }
+  #staffModal input {
+    width: 100%; padding: 12px 12px; border-radius: 10px; border: 1px solid #333; background: #0c0c0c; color: #fff;
+  }
+  #staffModal .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  #staffModal button {
+    padding: 10px 14px; border-radius: 10px; border: 0; background: #1f1f1f; color: #fff; cursor: pointer;
+  }
+  #staffModal button.primary { background: #0ea5a3; color: #061617; font-weight: 600; }
+  `;
+  const tag = document.createElement('style');
+  tag.type = 'text/css';
+  tag.appendChild(document.createTextNode(css));
+  document.head.appendChild(tag);
+})();
+
+// ---------- State ----------
 let mode = 'guest';       // default to guest
 let threadId = null;      // persist conversation (server returns this)
-let staffToken = localStorage.getItem('gd_staff_token') || null;
+let staffToken = null;    // no persistence -> re-prompt each refresh
 
-// Typing indicator
+// ---------- Staff Password Modal ----------
+function createStaffModal() {
+  const wrap = document.createElement('div');
+  wrap.id = 'staffModal';
+  wrap.innerHTML = `
+    <div class="card">
+      <h3>SPIRIT GUIDE | Staff Mode</h3>
+      <label>Enter Password:</label>
+      <input id="staffPassInput" type="password" autocomplete="current-password" />
+      <div class="row">
+        <button id="cancelStaffPass">Cancel</button>
+        <button id="okStaffPass" class="primary">Enter</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  return wrap;
+}
+
+let staffModal = null;
+function askStaffPassword() {
+  if (!staffModal) staffModal = createStaffModal();
+  const input = staffModal.querySelector('#staffPassInput');
+  const okBtn = staffModal.querySelector('#okStaffPass');
+  const cancelBtn = staffModal.querySelector('#cancelStaffPass');
+
+  return new Promise((resolve) => {
+    staffModal.style.display = 'flex';
+    input.value = '';
+    setTimeout(()=> input.focus(), 50);
+
+    const done = (val) => {
+      staffModal.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      input.removeEventListener('keydown', onKey);
+      resolve(val);
+    };
+    const onOk = () => done(input.value.trim() || null);
+    const onCancel = () => done(null);
+    const onKey = (e) => {
+      if (e.key === 'Enter') onOk();
+      if (e.key === 'Escape') onCancel();
+    };
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    input.addEventListener('keydown', onKey);
+  });
+}
+
+async function requireStaff() {
+  const t = await askStaffPassword();
+  if (!t) return false;
+  staffToken = t; // in-memory only
+  return true;
+}
+
+// ---------- Typing indicator ----------
 let typingEl = null;
 function showTyping() {
   removeTyping();
@@ -35,7 +128,7 @@ function removeTyping() {
   typingEl = null;
 }
 
-// Render helpers
+// ---------- Render helpers ----------
 function nl2br(htmlish){
   return (htmlish || '')
     .replace(/\*\*(.+?)\*\*/g, '<span class="accent-teal">$1</span>')
@@ -75,17 +168,7 @@ function setMode(next){
   appendAI(banner);
 }
 
-// Staff pass prompt
-async function requireStaff() {
-  if (staffToken) return true;
-  const t = prompt("Enter staff passcode:");
-  if (!t) return false;
-  staffToken = t.trim();
-  localStorage.setItem('gd_staff_token', staffToken);
-  return true;
-}
-
-// Wire mode buttons
+// ---------- Wire mode buttons ----------
 staffBtn.onclick = async () => {
   const ok = await requireStaff();
   if (!ok) return;          // stay in guest if canceled
@@ -93,7 +176,7 @@ staffBtn.onclick = async () => {
 };
 guestBtn.onclick = () => setMode('guest');
 
-// Visual viewport handling (mobile safe)
+// ---------- Visual viewport handling (mobile safe) ----------
 function setAppHeight(){
   const h = (window.visualViewport && window.visualViewport.height)
     ? window.visualViewport.height
@@ -112,13 +195,13 @@ if (window.visualViewport){
   window.visualViewport.addEventListener('scroll', syncHeights);
 }
 
-// First load
+// ---------- First load ----------
 setMode('guest');
 syncHeights();
 setTimeout(syncHeights, 150);
 setTimeout(syncHeights, 600);
 
-// ----- Send handler (Path A payload: { query, mode, threadId, staffToken }) -----
+// ---------- Send handler (Path A payload: { query, mode, threadId, staffToken }) ----------
 async function send(){
   const text = (inputEl.value || '').trim();
   if(!text) return;
@@ -175,7 +258,7 @@ inputEl.addEventListener('keydown', (e)=>{
 });
 sendBtn.addEventListener('click', send);
 
-// ----- Voice Input (Web Speech API) -----
+// ---------- Voice Input (Web Speech API) ----------
 (function setupVoice(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR || !micBtn) return;

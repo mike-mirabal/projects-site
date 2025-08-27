@@ -262,6 +262,27 @@ html,body{
 .hint .b{ color:var(--teal); font-weight:800; }
 .hint .a{ color:var(--accent); font-weight:800; }
 
+/* Staff password modal */
+#staffModal {
+  position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.35); z-index: 9999;
+}
+#staffModal .card {
+  background: #111; color: #fff; width: min(92vw, 420px); border-radius: 16px; padding: 18px 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.5);
+}
+#staffModal h3 { margin: 0 0 8px 0; font-size: 16px; letter-spacing: .02em; }
+#staffModal label { font-size: 13px; opacity: .9; display: block; margin-bottom: 8px; }
+#staffModal input {
+  width: 100%; padding: 12px 12px; border-radius: 10px; border: 1px solid #333; background: #0c0c0c; color: #fff;
+}
+#staffModal .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+#staffModal button {
+  padding: 10px 14px; border-radius: 10px; border: 0; background: #1f1f1f; color: #fff; cursor: pointer;
+}
+#staffModal button.primary { background: #0ea5a3; color: #061617; font-weight: 600; }
+
+
 /* Desktop horizontal breathing */
 @media (min-width:1100px){
   .app{ padding-inline:56px; }
