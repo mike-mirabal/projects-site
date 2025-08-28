@@ -154,7 +154,7 @@ html,body{
 }
 
 .msg.user{
-  padding:8px;
+  padding:1rem 0; /* vertical padding for breathing */
   border-bottom:var(--border) solid var(--accent);
   border-top:var(--border) solid var(--accent);
   border-radius:var(--radius);
