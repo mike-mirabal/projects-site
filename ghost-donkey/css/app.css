@@ -187,6 +187,40 @@ html,body{
   40%          { transform: translateY(-6px); opacity: 1; }
 }
 
+/* Typing / loading bubble */
+.msg.ai.typing {
+  opacity: 0.9;
+}
+
+.msg.ai .dots {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.msg.ai .dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--accent, #32e6b7); /* fallback if --accent missing */
+  animation: gd-bounce 1.2s infinite ease-in-out;
+}
+
+.msg.ai .dots span:nth-child(2) { animation-delay: 0.15s; }
+.msg.ai .dots span:nth-child(3) { animation-delay: 0.30s; }
+
+@keyframes gd-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: .5; }
+  40%          { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Reduced motion: keep it subtle */
+@media (prefers-reduced-motion: reduce) {
+  .msg.ai .dots span { animation: none; opacity: .7; }
+}
+
+
 
 /* ===== Input bar (sticky bottom) ===== */
 .inputbar{

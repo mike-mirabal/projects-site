@@ -55,9 +55,9 @@ function createStaffModal() {
   const wrap = document.createElement('div');
   wrap.id = 'staffModal';
   wrap.innerHTML = `
-    <div class="card">
-      <h3>SPIRIT GUIDE | Staff Mode</h3>
-      <label>Enter Password:</label>
+    <div class="card" role="dialog" aria-modal="true" aria-labelledby="staffModalTitle">
+      <h3 id="staffModalTitle">SPIRIT GUIDE | Staff Mode</h3>
+      <label for="staffPassInput">Enter Password:</label>
       <input id="staffPassInput" type="password" autocomplete="current-password" />
       <div class="row">
         <button id="cancelStaffPass">Cancel</button>
@@ -110,11 +110,13 @@ async function requireStaff() {
 // ---------- Typing indicator ----------
 let typingEl = null;
 function showTyping() {
-  removeTyping();
+  if (typingEl) return; // already showing
   const div = document.createElement('div');
   div.className = 'msg ai';
+  div.setAttribute('role', 'status');
+  div.setAttribute('aria-live', 'polite');
   div.innerHTML = `
-    <div class="typing">
+    <div class="typing" aria-label="Assistant is typing">
       <span class="dot"></span>
       <span class="dot"></span>
       <span class="dot"></span>
@@ -224,10 +226,9 @@ async function send(){
       })
     });
 
-    removeTyping();
-
     if(!res.ok){
       const t = await res.text().catch(()=> '');
+      removeTyping();
       appendAI(`A server error occurred (${res.status}).`);
       console.error('API error', res.status, t);
       return;
@@ -235,8 +236,10 @@ async function send(){
 
     const data = await res.json();
 
-    // Backend may force mode back to guest if pass invalid (we keep UI state)
+    // store threadId for this session
     if (data.threadId) threadId = data.threadId;
+
+    removeTyping(); // hide typing before rendering bubbles
 
     if (Array.isArray(data.bubbles) && data.bubbles.length){
       data.bubbles.forEach(b => appendAI(String(b)));
