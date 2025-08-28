@@ -290,8 +290,8 @@ html,body{
   padding-top:6px;
   padding-bottom:6px;
 }
-.hint .b{ color:var(--teal); font-weight:800; }
-.hint .a{ color:var(--accent); font-weight:800; }
+.hint .b{ color:var(--teal); font-weight:600; }
+.hint .a{ color:var(--accent); font-weight:600; }
 
 /* Staff password modal */
 #staffModal {
