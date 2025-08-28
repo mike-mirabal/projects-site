@@ -15,7 +15,7 @@ const micBtn   = document.getElementById('mic');
   .typing { display:inline-flex; gap:6px; align-items:center; height:1em; }
   .typing .dot {
     width:6px; height:6px; border-radius:50%;
-    background: var(--teal), #32e6b7);   /* <-- add this line */
+    background: var(--teal, #32e6b7);   /* <-- add this line */
     opacity:.5; animation:bounce 1.2s infinite ease-in-out;
   }
   .typing .dot:nth-child(1){ animation-delay:0s; } 
