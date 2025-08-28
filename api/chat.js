@@ -225,7 +225,7 @@ export default async function handler(req, res) {
         for (let i = msgs.data.length - 1; i >= 0; i--) {
           if (msgs.data[i].role === "assistant") { lastAssistantIndex = i; break; }
         }
-        let lastAssistant = lastAssistantIndex >= 0 ? msgs.data[lastAssistantIndex] : null;
+        const lastAssistant = lastAssistantIndex >= 0 ? msgs.data[lastAssistantIndex] : null;
 
         // Find nearest previous user message
         let pairedUser = null;
@@ -236,28 +236,51 @@ export default async function handler(req, res) {
         }
 
         // Extract plain text for CSV
-        const userText = textOfMessage(pairedUser);
-        const botText  = textOfMessage(lastAssistant);
+        const _textOf = (m) => {
+          if (!m?.content?.length) return "";
+          const chunks = [];
+          for (const c of m.content) if (c.type === "text" && c.text?.value) chunks.push(c.text.value);
+          return chunks.join("\n\n")
+            .replace(/<!--\s*BUBBLE\s*-->/gi, "\n\n")
+            .replace(/<\/?[^>]+>/g, '') // strip HTML for the sheet
+            .replace(/\s+\n/g, '\n')
+            .trim();
+        };
+
+        let userText = _textOf(pairedUser);
+        let botText  = _textOf(lastAssistant);
+
+        // Robust fallbacks
+        if (!userText) userText = (message || "").toString().trim();
+        if (!botText) {
+          // Use the bubbles we are about to return (already sanitized)
+          botText = (Array.isArray(bubbles) && bubbles.length)
+            ? bubbles.join("\n\n").replace(/<\/?[^>]+>/g, '').trim()
+            : "";
+        }
 
         // Turn number = count of user messages so far
         let turn = 0;
         for (const m of msgs.data) if (m.role === "user") turn++;
 
-        // Session ID from threadId
+        // Session ID (last 8 chars)
         const sessionId = toSessionId(threadId);
 
+        // Only log if we have at least something
         if (userText || botText) {
+          const payload = {
+            mode,
+            threadId,
+            turn,
+            sessionId,
+            user: userText,
+            bot: botText,
+          };
+
           await fetch(SHEET_WEBHOOK_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              mode,
-              threadId,
-              turn,
-              sessionId,  // <-- include Session ID for your new column
-              user: userText,
-              bot: botText,
-            }),
+            body: JSON.stringify(payload),
           });
         }
       } catch (logErr) {
@@ -265,7 +288,9 @@ export default async function handler(req, res) {
       }
     }
 
+    // <-- THIS WAS MISSING IN YOUR PASTE
     return res.status(200).json({ threadId, bubbles, answer: bubbles.join("\n\n") });
+
   } catch (e) {
     console.error("API error:", e);
     return res.status(500).json({ error: "Server error", detail: String(e).slice(0, 500) });
