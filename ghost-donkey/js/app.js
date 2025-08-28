@@ -9,13 +9,13 @@ const staffBtn = document.getElementById('staffBtn');
 const composer = document.getElementById('composer');
 const micBtn   = document.getElementById('mic');
 
-// ---------- Inject minimal CSS (typing & modal) so this file is self-contained ----------
+// ---------- Inject minimal CSS (typing, modal, avatars, dividers) so this file is self-contained ----------
 (function injectCSS(){
   const css = `
   .typing { display:inline-flex; gap:6px; align-items:center; height:1em; }
   .typing .dot {
     width:6px; height:6px; border-radius:50%;
-    background: var(--teal, #32e6b7);   /* <-- add this line */
+    background: var(--teal, #32e6b7);
     opacity:.5; animation:bounce 1.2s infinite ease-in-out;
   }
   .typing .dot:nth-child(1){ animation-delay:0s; } 
@@ -42,6 +42,35 @@ const micBtn   = document.getElementById('mic');
     padding: 10px 14px; border-radius: 10px; border: 0; background: #1f1f1f; color: #fff; cursor: pointer;
   }
   #staffModal button.primary { background: #0ea5a3; color: #061617; font-weight: 600; }
+
+  /* Message rows with tiny avatars and subtle dividers */
+  #chat .row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+  #chat .row + .row::before {
+    content: "";
+    grid-column: 1 / -1;
+    height: 1px;
+    background: linear-gradient(to right, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    margin: 8px 0 10px;
+  }
+  #chat .row:first-child::before { display: none; }
+
+  #chat .avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; user-select: none;
+    background: rgba(255,255,255,.06); color: #fff;
+  }
+  #chat .avatar.ai   { border: 2px solid var(--teal, #32e6b7); }
+  #chat .avatar.user { border: 2px solid rgba(255,255,255,.15); }
+
+  #chat .msg { padding: 6px 0; }
+  /* Lightly group consecutive AI bubbles */
+  #chat .row.ai + .row.ai::before { opacity: .5; }
   `;
   const tag = document.createElement('style');
   tag.type = 'text/css';
@@ -115,19 +144,20 @@ async function requireStaff() {
 let typingEl = null;
 function showTyping() {
   if (typingEl) return; // already showing
-  const div = document.createElement('div');
-  div.className = 'msg ai';
-  div.setAttribute('role', 'status');
-  div.setAttribute('aria-live', 'polite');
-  div.innerHTML = `
-    <div class="typing" aria-label="Assistant is typing">
-      <span class="dot"></span>
-      <span class="dot"></span>
-      <span class="dot"></span>
+  const row = document.createElement('div');
+  row.className = 'row ai';
+  row.setAttribute('role', 'status');
+  row.setAttribute('aria-live', 'polite');
+  row.innerHTML = `
+    <div class="avatar ai">🫏</div>
+    <div class="msg ai">
+      <div class="typing" aria-label="Assistant is typing">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
     </div>`;
-  chatEl.appendChild(div);
+  chatEl.appendChild(row);
   chatEl.scrollTop = chatEl.scrollHeight;
-  typingEl = div;
+  typingEl = row;
 }
 function removeTyping() {
   if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
@@ -140,18 +170,27 @@ function nl2br(htmlish){
     .replace(/\*\*(.+?)\*\*/g, '<span class="accent-teal">$1</span>')
     .replace(/\n/g, '<br>');
 }
-function appendAI(text){
-  const div = document.createElement('div');
-  div.className = 'msg ai';
-  div.innerHTML = nl2br(text);
-  chatEl.appendChild(div);
+
+// (Option B) Avatars + divider rows
+function appendAI(html){
+  const row = document.createElement('div');
+  row.className = 'row ai';
+  row.innerHTML = `
+    <div class="avatar ai">🫏</div>
+    <div class="msg ai">${nl2br(html)}</div>
+  `;
+  chatEl.appendChild(row);
   chatEl.scrollTop = chatEl.scrollHeight;
 }
+
 function appendUser(text){
-  const div = document.createElement('div');
-  div.className = 'msg user';
-  div.textContent = text;
-  chatEl.appendChild(div);
+  const row = document.createElement('div');
+  row.className = 'row user';
+  row.innerHTML = `
+    <div class="avatar user">U</div>
+    <div class="msg user">${text}</div>
+  `;
+  chatEl.appendChild(row);
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
