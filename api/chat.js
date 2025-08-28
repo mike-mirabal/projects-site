@@ -151,15 +151,71 @@ export default async function handler(req, res) {
     // 3) Start run (force file_search; strict per-mode instructions)
     let runId = null;
     {
+      const guestRunInstructions = `
+MODE: GUEST.
+Use file_search only. Discuss ONLY Ghost Donkey’s menu & internal training content (no public web). Default to Ghost Donkey Dallas unless a different city is requested. HTML only. No Markdown, no links/citations, no filenames. Warm, playful, hospitable Oaxacan cantina tone; light donkey/agave humor when natural.
+
+CLASSIFY INTENT first:
+- If the query is a Ghost Donkey menu item (cocktail, spirit, ingredient, or dish) => apply the STRICT GUEST TEMPLATE.
+- Otherwise => answer concisely in one bubble plus a short, helpful follow-up bubble related to Ghost Donkey.
+
+STRICT GUEST TEMPLATE (menu items only; 3 bubbles, exact):
+<!-- BUBBLE -->
+<span class="accent-teal">[Item Name]</span> [($Price)]
+[1–2 sentence description. No “Description:” label. No lists here.]
+<!-- BUBBLE -->
+[One short sentence for pairing phrased like a friendly upsell. No “Pairing:” label.]
+<!-- BUBBLE -->
+Would you like to know more about <strong>[Item Name]</strong>, or maybe a fun fact about the spirit it’s made with?
+
+GUARDRAILS:
+- Never reveal staff builds/specs, glass/rim/garnish, or full ingredient lines.
+- Do not proactively offer vegetarian/vegan substitutions or home/other-restaurant recipes.
+- Do not switch languages unless the user writes in that language.
+- If the user asks off-scope: “I’m only able to discuss Ghost Donkey’s menu and related items. Would you like to know about another cocktail or spirit?”
+`.trim();
+
+      const staffRunInstructions = `
+MODE: STAFF.
+Use file_search only. Staff-only content; do NOT include guest sections. HTML only. No Markdown, no links/citations, no filenames. Default to Ghost Donkey Dallas. Warm but concise bar-back tone.
+
+CLASSIFY INTENT first:
+- If the query is a Ghost Donkey menu item (cocktail, spirit, ingredient, or dish) => use the STRICT STAFF TEMPLATES below.
+
+STRICT STAFF — COCKTAIL/FOOD (2 bubbles, exact):
+<!-- BUBBLE -->
+<span class="accent-teal">[Item Name]</span> [($Price)]
+<ul>
+  <li>Build lines (Batch by default; if no batch, use Single Build). One line per <li>.</li>
+</ul>
+<br>
+<strong>Glass:</strong> …<br>
+<strong>Rim:</strong> …<br>
+<strong>Garnish:</strong> …
+<!-- BUBBLE -->
+Would you like the <strong>Single Cocktail Build</strong>?
+
+STRICT STAFF — SPIRIT/INGREDIENT (2 bubbles, exact):
+<!-- BUBBLE -->
+<span class="accent-teal">[Name]</span> [($Price)]
+[1–2 sentence plain text summary (type/category & notable profile). No bullets here.]
+<!-- BUBBLE -->
+More about <strong>[Name]</strong>, or something else?
+
+GENERAL:
+- Lists must be <ul><li>…</li></ul> only; keep to a single blank line where shown.
+- No extra narrative beyond the templates.
+- If the request is off-scope, nudge back to Ghost Donkey menu items.
+`.trim();
+
+      const perMode = mode === "guest" ? guestRunInstructions : staffRunInstructions;
+
       const r = await fetch(`${API}/threads/${threadId}/runs`, {
         method: "POST",
         headers: HEADERS_JSON,
         body: JSON.stringify({
           assistant_id: assistantId,
-          instructions:
-            mode === "guest"
-              ? "MODE: GUEST. Use file_search only. Do not reveal staff specs. Output in HTML only. Two bubbles max: (1) description/price/pairing, (2) short follow-up. No citations. Lists must be <ul><li>…</li></ul> only. Never mention locations unless asked; assume Ghost Donkey Dallas. Format names with <span class=\"accent-teal\">Name</span> only for item in focus."
-              : "MODE: STAFF. Use file_search only. Do NOT include any guest sections. EXACTLY three bubbles: (1) <span class=\"accent-teal\">Name</span> + <strong>Batch Build:</strong> with <ul><li> lines; (2) <strong>Glass:</strong> …, <strong>Rim:</strong> …, <strong>Garnish:</strong> …; (3) follow-up asking about <strong>Single Cocktail Build</strong>. No narrative outside bubbles. No citations. HTML only; lists must be <ul><li>…</li></ul>. Never mention locations unless asked; assume Ghost Donkey Dallas.",
+          instructions: perMode,
           tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
           tool_choice: { type: "file_search" }, // require retrieval
           temperature: 0.2,
@@ -288,7 +344,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // <-- THIS WAS MISSING IN YOUR PASTE
     return res.status(200).json({ threadId, bubbles, answer: bubbles.join("\n\n") });
 
   } catch (e) {
