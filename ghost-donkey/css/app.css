@@ -153,7 +153,6 @@ html,body{
   line-height:1.25;
 }
 
-
 .msg.user{
   padding:8px;
   border-bottom:var(--border) solid var(--accent);
@@ -219,10 +218,6 @@ html,body{
 @media (prefers-reduced-motion: reduce) {
   .msg.ai .dots span { animation: none; opacity: .7; }
 }
-
-
-
-
 
 /* ===== Input bar (sticky bottom) ===== */
 .inputbar{
@@ -299,7 +294,6 @@ html,body{
 .hint .a{ color:var(--accent); font-weight:800; }
 
 /* Staff password modal */
-/* Staff password modal */
 #staffModal {
   position: fixed;
   inset: 0;
@@ -370,8 +364,35 @@ html,body{
   font-weight: 600;
 }
 
-
 /* Desktop horizontal breathing */
 @media (min-width:1100px){
   .app{ padding-inline:56px; }
+}
+
+/* ===== Compact rhythm & consistent gaps (added) ===== */
+
+/* Consistent single gap between any two messages */
+#chat .msg + .msg {
+  margin-top: 10px;
+}
+
+/* Tight inner rhythm for multi-bubble assistant replies, if used */
+#chat .msg .bubble + .bubble {
+  margin-top: 8px;
+}
+
+/* Trim default margins inside messages so lines don’t drift apart */
+#chat .msg p,
+#chat .msg ul,
+#chat .msg ol {
+  margin: 4px 0;
+}
+
+#chat .msg li {
+  margin: 2px 0;
+}
+
+/* Ensure the first message never gets extra spacing */
+#chat .msg:first-child {
+  margin-top: 0;
 }

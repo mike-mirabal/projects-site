@@ -134,6 +134,21 @@ function removeTyping() {
   typingEl = null;
 }
 
+// ---------- Spacing compactor ----------
+function compactHTML(html) {
+  let s = String(html || '');
+  // Normalize <br> variants
+  s = s.replace(/<br\s*\/?>/gi, '<br>');
+  // Collapse any runs of <br> to a single <br>
+  s = s.replace(/(?:\s*<br>\s*){2,}/gi, '<br>');
+  // Trim leading/trailing <br>
+  s = s.replace(/^(?:\s*<br>)+/i, '');
+  s = s.replace(/(?:\s*<br>)+\s*$/i, '');
+  // Collapse 3+ raw newlines to one blank line
+  s = s.replace(/\n{3,}/g, '\n\n');
+  return s.trim();
+}
+
 // ---------- Render helpers ----------
 function nl2br(htmlish){
   return (htmlish || '')
@@ -143,7 +158,7 @@ function nl2br(htmlish){
 function appendAI(text){
   const div = document.createElement('div');
   div.className = 'msg ai';
-  div.innerHTML = nl2br(text);
+  div.innerHTML = compactHTML(nl2br(text));
   chatEl.appendChild(div);
   chatEl.scrollTop = chatEl.scrollHeight;
 }
