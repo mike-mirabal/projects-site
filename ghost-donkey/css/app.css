@@ -220,33 +220,7 @@ html,body{
   .msg.ai .dots span { animation: none; opacity: .7; }
 }
 
-/* ===== Chat layout B: two-column with avatars ===== */
-/* two-column message row */
-#chat .row {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 10px;
-  align-items: start;
-}
 
-/* avatar styles */
-#chat .avatar {
-  width: 24px; height: 24px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700;
-  background: rgba(255,255,255,.06);
-  color: #fff;
-}
-#chat .avatar.ai { border: 2px solid var(--accent, #32e6b7); }
-#chat .avatar.user { border: 2px solid rgba(255,255,255,.15); }
-
-/* message content column, with the same dividers as A */
-#chat .msg { padding: 6px 0; }
-#chat .row + .row::before {
-  content: ""; grid-column: 1 / -1; height: 1px;
-  background: linear-gradient(to right, rgba(255,255,255,.06), rgba(255,255,255,.02));
-  margin: 8px 0 10px;
-}
 
 
 
