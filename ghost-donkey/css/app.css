@@ -270,19 +270,38 @@ html,body{
 }
 
 /* Send button */
-.send{
-  flex:0 0 auto;
-  height:40px;
-  width:40px;
-  border:var(--border) solid var(--accent);
-  background:var(--accent);
-  color:#fff;
-  border-radius:4px;
-  cursor:pointer;
-  display:grid;
-  place-items:center;
+
+.send {
+  flex: 0 0 auto;
+  height: 40px;
+  width: 40px;
+  border: var(--border) solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
-.send:disabled{ opacity:.55; cursor:not-allowed; }
+
+.send:hover:not(:disabled) {
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
+
+.send:active:not(:disabled) {
+  transform: translateY(2px) scale(0.97);
+  background: color-mix(in srgb, var(--accent) 90%, black 10%);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25) inset;
+}
+
+.send:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+/* ===== Hint text ===== */
 
 .hint{
   font-size:clamp(12px, .95vw, 14px);
