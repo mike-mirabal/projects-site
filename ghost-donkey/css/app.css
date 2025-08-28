@@ -252,21 +252,46 @@ html,body{
 }
 
 /* Mic button */
-.mic{
-  all:unset;
-  cursor:pointer;
-  display:grid;
-  place-items:center;
-  height:28px;
-  width:28px;
+.mic {
+  all: unset;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  height: 28px;
+  width: 28px;
+  transition: transform 0.12s ease, color 0.12s ease;
 }
-.mic.listening{ color:var(--accent); }
-.mic.recording{ color:var(--teal); }
+
+.mic:hover {
+  transform: scale(1.1);
+}
+
+.mic:active {
+  transform: scale(0.92);
+}
+
+/* Listening state = pulsing glow */
+.mic.listening {
+  color: var(--accent);
+  animation: mic-pulse 1.2s infinite ease-in-out;
+}
+
+/* Recording state = teal + steady glow */
+.mic.recording {
+  color: var(--teal);
+  box-shadow: 0 0 8px var(--teal);
+  border-radius: 50%;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50%      { transform: scale(1.15); opacity: 1; }
+}
 
 .mic img, .send img {
-  display:block;
-  height:24px;
-  width:24px;
+  display: block;
+  height: 24px;
+  width: 24px;
 }
 
 /* Send button */
