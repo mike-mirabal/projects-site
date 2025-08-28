@@ -1,4 +1,5 @@
-// /api/chat.js — Assistants v2 via REST with strict formatting, staff pass gate, sanitization, and Google Sheet logging
+// /api/chat.js — Assistants v2 via REST with strict formatting, staff pass gate,
+// HTML sanitization, and Google Sheet logging (one row per turn + Session ID)
 
 const API = "https://api.openai.com/v1";
 const HEADERS_JSON = {
@@ -39,7 +40,7 @@ function ensureHtmlDashLists(html) {
   return out.join("\n");
 }
 function ensureHtmlQuantityLists(html) {
-  // Convert runs of “ingredient-ish” lines into <ul><li>…</li></ul>
+  // Convert runs of ingredient-ish lines into <ul><li>…</li></ul>
   const isQty = (s) => /^\s*(?:\d+(\.\d+)?\s*oz\b|top with\b|add\b|splash\b|dash\b|barspoon\b|rinse\b|fill\b)/i.test(s);
   const lines = (html || "").split("\n");
   const out = [];
@@ -73,27 +74,24 @@ function sanitize(html) {
   return s;
 }
 
-// Turn thread messages into a plain transcript text block (for the Sheet)
-function buildTranscript(messages) {
-  // messages: { data: [ { role: 'user'|'assistant', content: [ {type:'text', text:{value}} ] }, ... ] }
-  const lines = [];
-  for (const m of (messages?.data || [])) {
-    const role = m.role === "user" ? "User" : "Bot";
-    let text = "";
-    for (const c of (m.content || [])) {
-      if (c.type === "text" && c.text?.value) text += (text ? "\n" : "") + c.text.value;
-    }
-    // Normalize bubble delimiters to newlines so CSV is readable
-    text = text.replace(/<!--\s*BUBBLE\s*-->/gi, "\n\n");
-    // Keep it plain text in the log (strip most tags but preserve visible content)
-    // Very light strip: remove tags while keeping text
-    const plain = text
-      .replace(/<\/?[^>]+>/g, '')     // strip HTML tags
-      .replace(/\s+\n/g, '\n')
-      .trim();
-    if (plain) lines.push(`${role}: ${plain}`);
+// Build a short Session ID from the thread (for the Sheet & human readability)
+function toSessionId(threadId) {
+  if (!threadId) return "";
+  return (threadId.slice(-8) || threadId).toUpperCase();
+}
+
+// Extract plain text from a message's content (for logging to CSV)
+function textOfMessage(msg) {
+  if (!msg?.content?.length) return "";
+  const chunks = [];
+  for (const c of msg.content) {
+    if (c.type === "text" && c.text?.value) chunks.push(c.text.value);
   }
-  return lines.join("\n\n");
+  return chunks.join("\n\n")
+    .replace(/<!--\s*BUBBLE\s*-->/gi, "\n\n") // bubbles to blank line
+    .replace(/<\/?[^>]+>/g, '')               // strip HTML tags
+    .replace(/\s+\n/g, '\n')
+    .trim();
 }
 
 export default async function handler(req, res) {
@@ -160,8 +158,8 @@ export default async function handler(req, res) {
           assistant_id: assistantId,
           instructions:
             mode === "guest"
-              ? "MODE: GUEST. Use file_search only. Do not reveal staff specs. Output in HTML only. Two bubbles max: (1) description/price/pairing, (2) short follow-up. No citations. Lists must be <ul><li>…</li></ul> only."
-              : "MODE: STAFF. Use file_search only. Do NOT include any guest sections. EXACTLY three bubbles: (1) Name + <strong>Batch Build</strong> with <ul><li> lines; (2) <strong>Glass/Rim/Garnish</strong>; (3) follow-up asking about Single Build. No narrative outside bubbles. No citations. HTML only; lists must be <ul><li>…</li></ul>.",
+              ? "MODE: GUEST. Use file_search only. Do not reveal staff specs. Output in HTML only. Two bubbles max: (1) description/price/pairing, (2) short follow-up. No citations. Lists must be <ul><li>…</li></ul> only. Never mention locations unless asked; assume Ghost Donkey Dallas. Format names with <span class=\"accent-teal\">Name</span> only for item in focus."
+              : "MODE: STAFF. Use file_search only. Do NOT include any guest sections. EXACTLY three bubbles: (1) <span class=\"accent-teal\">Name</span> + <strong>Batch Build:</strong> with <ul><li> lines; (2) <strong>Glass:</strong> …, <strong>Rim:</strong> …, <strong>Garnish:</strong> …; (3) follow-up asking about <strong>Single Cocktail Build</strong>. No narrative outside bubbles. No citations. HTML only; lists must be <ul><li>…</li></ul>. Never mention locations unless asked; assume Ghost Donkey Dallas.",
           tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
           tool_choice: { type: "file_search" }, // require retrieval
           temperature: 0.2,
@@ -219,19 +217,49 @@ export default async function handler(req, res) {
     if (!bubbles.length && answer) bubbles = [sanitize(answer)];
     if (!bubbles.length) bubbles = ["I couldn't find that in my files yet."];
 
-    // 6) Log the entire conversation to Google Sheet (best-effort)
+    // 6) Log only the latest turn (best-effort, one row per user→bot pair)
     if (SHEET_WEBHOOK_URL) {
       try {
-        const transcript = buildTranscript(msgs);
-        await fetch(SHEET_WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mode,
-            threadId,
-            dialogue: transcript,
-          }),
-        });
+        // Find last assistant message
+        let lastAssistantIndex = -1;
+        for (let i = msgs.data.length - 1; i >= 0; i--) {
+          if (msgs.data[i].role === "assistant") { lastAssistantIndex = i; break; }
+        }
+        let lastAssistant = lastAssistantIndex >= 0 ? msgs.data[lastAssistantIndex] : null;
+
+        // Find nearest previous user message
+        let pairedUser = null;
+        if (lastAssistant) {
+          for (let i = lastAssistantIndex - 1; i >= 0; i--) {
+            if (msgs.data[i].role === "user") { pairedUser = msgs.data[i]; break; }
+          }
+        }
+
+        // Extract plain text for CSV
+        const userText = textOfMessage(pairedUser);
+        const botText  = textOfMessage(lastAssistant);
+
+        // Turn number = count of user messages so far
+        let turn = 0;
+        for (const m of msgs.data) if (m.role === "user") turn++;
+
+        // Session ID from threadId
+        const sessionId = toSessionId(threadId);
+
+        if (userText || botText) {
+          await fetch(SHEET_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              mode,
+              threadId,
+              turn,
+              sessionId,  // <-- include Session ID for your new column
+              user: userText,
+              bot: botText,
+            }),
+          });
+        }
       } catch (logErr) {
         console.warn("Logging to Google Sheet failed:", logErr);
       }
