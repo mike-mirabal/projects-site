@@ -42,6 +42,34 @@ const micBtn   = document.getElementById('mic');
     padding: 10px 14px; border-radius: 10px; border: 0; background: #1f1f1f; color: #fff; cursor: pointer;
   }
   #staffModal button.primary { background: #0ea5a3; color: #061617; font-weight: 600; }
+
+  /* --- About modal (opens from hint tap) --- */
+  #aboutModal {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.45); z-index: 9999; padding: 12px;
+  }
+  #aboutModal * { box-sizing: border-box; }
+  #aboutModal .card {
+    background: #111; color: #fff; width: min(92vw, 560px);
+    border-radius: 12px; padding: 18px 16px 16px;
+    box-shadow: 0 16px 48px rgba(0,0,0,.55);
+    position: relative;
+  }
+  #aboutModal h3 {
+    margin: 0 28px 6px 0; font-size: 16px; letter-spacing: .02em;
+    color: var(--teal, #55c4bb);
+  }
+  #aboutModal p {
+    margin: 8px 0; line-height: 1.35; font-size: 14px;
+  }
+  #aboutModal .close {
+    position: absolute; top: 10px; right: 10px;
+    height: 28px; width: 28px; border-radius: 8px;
+    display: inline-grid; place-items: center;
+    border: 1px solid #2a2a2a; background: #151515; color: #fff;
+    cursor: pointer; font-size: 16px; line-height: 1;
+  }
+  #aboutModal .close:hover { background: #1b1b1b; }
   `;
   const tag = document.createElement('style');
   tag.type = 'text/css';
@@ -109,6 +137,62 @@ async function requireStaff() {
   if (!t) return false;
   staffToken = t; // in-memory only
   return true;
+}
+
+// ---------- About Modal (opens from hint tap/click) ----------
+function createAboutModal() {
+  const wrap = document.createElement('div');
+  wrap.id = 'aboutModal';
+  wrap.setAttribute('role', 'dialog');
+  wrap.setAttribute('aria-modal', 'true');
+  wrap.setAttribute('aria-labelledby', 'aboutTitle');
+
+  wrap.innerHTML = `
+    <div class="card">
+      <button class="close" id="aboutClose" aria-label="Close">×</button>
+      <h3 id="aboutTitle">About Spirit Guide</h3>
+      <p><strong>What is this?</strong> Spirit Guide is a passion-project MVP built to help guests explore the menu and help staff learn cocktail specs quickly—right at the bar.</p>
+      <p><strong>Who built it?</strong> Created by <em>Mike Mirabal</em>—bartender, creative technologist, and designer who tends bar at Ghost Donkey. This started as a notebook, evolved into a custom GPT, and became this focused assistant.</p>
+      <p><strong>Why build it?</strong> To make service smoother, training faster, and menu knowledge easier to access for everyone—without flipping through binders or searching random links.</p>
+      <p><strong>About AIgentask:</strong> AIgentask is a small software company focused on AI-powered solutions and automation workflows. Spirit Guide is an independent passion project (not an official Ghost Donkey collaboration).</p>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  const closeBtn = wrap.querySelector('#aboutClose');
+  const onClose = () => hideAboutModal();
+  closeBtn.addEventListener('click', onClose);
+
+  // Click outside card closes
+  wrap.addEventListener('click', (e) => {
+    if (e.target === wrap) hideAboutModal();
+  });
+
+  // Esc closes
+  document.addEventListener('keydown', function escHandler(e){
+    if (wrap.style.display === 'flex' && e.key === 'Escape') hideAboutModal();
+  });
+
+  return wrap;
+}
+
+let aboutModal = null;
+let aboutPrevFocus = null;
+
+function showAboutModal() {
+  if (!aboutModal) aboutModal = createAboutModal();
+  aboutPrevFocus = document.activeElement;
+  aboutModal.style.display = 'flex';
+  const closeBtn = aboutModal.querySelector('#aboutClose');
+  setTimeout(() => closeBtn && closeBtn.focus(), 50);
+}
+
+function hideAboutModal() {
+  if (!aboutModal) return;
+  aboutModal.style.display = 'none';
+  if (aboutPrevFocus && typeof aboutPrevFocus.focus === 'function') {
+    aboutPrevFocus.focus();
+  }
 }
 
 // ---------- Typing indicator ----------
@@ -300,4 +384,12 @@ sendBtn.addEventListener('click', send);
   };
 
   micBtn.onclick = () => { try { recognition.start(); } catch {} };
+})();
+
+// ---------- OPEN ABOUT MODAL WHEN HINT IS CLICKED ----------
+(function wireAboutHint(){
+  const hint = document.querySelector('.hint');
+  if (!hint) return;
+  hint.style.cursor = 'pointer';
+  hint.addEventListener('click', showAboutModal);
 })();
