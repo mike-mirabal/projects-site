@@ -29,6 +29,7 @@
       padding: clamp(16px, 4vw, 40px);
       /* Use dynamic viewport to avoid mobile 100vh bugs */
       min-height: 100dvh;
+      min-height: 100svh;
       display: grid;
       grid-template-rows: auto 1fr auto;
       gap: 16px;
@@ -82,6 +83,25 @@
     .msg-ok{ font-size: 13px; color: #0a5; }
     .msg-err{ font-size: 13px; color: #b00; }
     footer{ font-size:12px; opacity:.8; text-align:center; padding:12px 0; }
+
+    /* --- CTA full width on mobile --- */
+    @media (max-width: 640px) {
+      .cta {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin-top: 12px;
+        margin-bottom: 0;
+      }
+      .cta .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* --- Trim extra space --- */
+    .card > *:last-child { margin-bottom: 0; }
+    .card { padding-bottom: clamp(12px, 2.5vw, 18px); }
   </style>
 </head>
 <body>
@@ -106,31 +126,20 @@
       <h2>How to test</h2>
       <p>
         <ul>
-            <li>
-        Choose a mode (Guest or Staff).
-            </li>
-            <li>
-            Ask whatever comes naturally.
-            </li>
-             <li>
-       Staff Mode Password: <span class="accent-medium">stealth</span>
-            </li>
+            <li>Choose a mode (Guest or Staff).</li>
+            <li>Ask whatever comes naturally.</li>
+            <li>Staff Mode Password: <span class="accent-medium">stealth</span></li>
         </ul>
       </p>
     
-
       <h2>Tips</h2>
       <p>
         Try role-playing. For example, in Guest Mode, ask "What cocktails do you recommend with tacos?"
       </p>
 
       <div class="cta">
-        <!--
-        <a class="btn secondary" href="/" rel="noopener">Back to Projects</a>
-        -->
         <a class="btn" href="/spirit-guide/" rel="noopener">Open Spirit Guide</a>
       </div>
-
     </main>
 
     <footer>
@@ -141,52 +150,6 @@
   <script>
     // --- Set year ---
     document.getElementById('y').textContent = new Date().getFullYear();
-
-    // --- Your Apps Script Web App URL (Deploy > New deployment > Web app) ---
-    const FEEDBACK_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzJyA648qhOsXP5Y_wvNgOG3SLgnIEsCtFMs_2vHoHmX7oDRpUWkQFbW4l6rG3SXemIlw/exec";
-
-    // --- Handle feedback submit (form-encoded to avoid CORS preflight) ---
-    const f = document.getElementById('feedback');
-    const btn = document.getElementById('fbSend');
-    const msg = document.getElementById('fbMsg');
-    const textarea = document.getElementById('fbText');
-
-    f.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      msg.textContent = "";
-      const text = (textarea.value || "").trim();
-      if (!text) { msg.textContent = "Please add a note first."; msg.className = "msg-err"; return; }
-
-      btn.disabled = true;
-
-      // URLSearchParams -> application/x-www-form-urlencoded (no preflight)
-      const body = new URLSearchParams({
-        feedback: text,
-        page: location.pathname,
-        ts: new Date().toISOString()
-      });
-
-      try {
-        const r = await fetch(FEEDBACK_WEBHOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-          body
-        });
-
-        // Apps Script returns 200 with text/plain; just treat any 200 as OK
-        if (!r.ok) throw new Error("Request failed: " + r.status);
-
-        msg.textContent = "Thanks! Your feedback was sent.";
-        msg.className = "msg-ok";
-        textarea.value = "";
-      } catch (err) {
-        console.warn("Feedback error:", err);
-        msg.innerHTML = `Couldn’t send. You can also <a href="mailto:mikemirabal360@gmail.com?subject=Spirit%20Guide%20Feedback&body=${encodeURIComponent(text)}">email it</a>.`;
-        msg.className = "msg-err";
-      } finally {
-        btn.disabled = false;
-      }
-    });
   </script>
 </body>
 </html>
