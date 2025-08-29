@@ -97,6 +97,17 @@
         width: 100%;
         justify-content: center;
       }
+/* Keep full-width CTA inside the card padding on mobile */
+@media (max-width: 640px) {
+  .card { overflow: hidden; }                 /* clip any sub-pixel overflow */
+  .card .cta { width: 100%; margin-inline: 0; }
+  .card .cta .btn {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;                   /* include button border in width */
+  }
+}
+
     }
 
     /* --- Trim extra space --- */
