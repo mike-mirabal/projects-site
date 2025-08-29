@@ -15,11 +15,30 @@ function stripCitations(html) {
 }
 function collapseWhitespace(html) {
   let s = html || "";
+
+  // Normalize line endings
   s = s.replace(/\r/g, "");
-  s = s.replace(/\n{3,}/g, "\n\n");
-  s = s.replace(/(?:<br\s*\/?>\s*){3,}/gi, "<br><br>");
+
+  // Trim stray spaces on each line
+  s = s.split("\n").map(l => l.trimEnd()).join("\n");
+
+  // Ensure paragraphs always have ONE blank line between them:
+  // - Turn any run of 2+ newlines into exactly two newlines
+  s = s.replace(/\n{2,}/g, "\n\n");
+
+  // Do the same for <br> tags (any run of 2+ <br> => exactly two)
+  s = s.replace(/(?:<br\s*\/?>\s*){2,}/gi, "<br><br>");
+
+  // Avoid leading/trailing extra breaks
+  s = s.replace(/^(?:<br\s*\/?>\s*)+/i, "");
+  s = s.replace(/(?:<br\s*\/?>\s*)+$/i, "");
+
+  // Remove empty paragraphs created by over-eager generators
+  s = s.replace(/(<p>\s*<\/p>)+/gi, "");
+
   return s.trim();
 }
+
 function ensureHtmlDashLists(html) {
   // dash -> ul/li
   const lines = (html || "").split("\n");

@@ -163,6 +163,28 @@ html,body{
 }
 .accent-teal{ color:var(--teal); font-weight:800; }
 
+/* Tighten bullet lists inside bot/user messages */
+.msg ul {
+  margin: 6px 0 8px;         /* less vertical air above/below lists */
+  padding-left: 1.15em;      /* neat indent */
+}
+
+.msg li {
+  margin: 2px 0;             /* smaller gap between bullets */
+  line-height: 1.2;          /* slightly tighter than paragraph text */
+}
+
+/* Paragraph rhythm inside AI messages */
+.msg.ai p {
+  margin: 0 0 8px;           /* consistent end-space per paragraph */
+}
+
+/* Normalize breaks: treat <br><br> as one 'paragraph gap' visually */
+.msg.ai br + br {
+  line-height: 0;            /* prevents the double-break from feeling too tall */
+}
+
+
 /* Typing indicator */
 .typing {
   display: inline-flex;
