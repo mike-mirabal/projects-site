@@ -68,12 +68,13 @@ const micBtn   = document.getElementById('mic');
     position: absolute; top: 10px; right: 10px;
     height: 28px; width: 28px; border-radius: 8px;
     display: inline-grid; place-items: center;
-    border: none; background: transparent; color: #ee4d36;
+    border: none; outline: none; background: transparent; color: #ee4d36;
     cursor: pointer; font-size: 1.5rem; line-height: 1;
   }
   #aboutModal .close:hover,
 #aboutModal .close:focus { 
-  background: transparent; 
+  background: transparent;
+  outline: none; 
 }
   `;
   const tag = document.createElement('style');
