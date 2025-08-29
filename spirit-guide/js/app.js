@@ -59,9 +59,7 @@ const micBtn   = document.getElementById('mic');
   #aboutModal h3 {git c
     font-size: 1.2rem;  
     font-weight: 900;
-    color: var(--teal, #55c4bb);
-    text-shadow:-3px 3px 0 var(--accent);
-    letter-spacing:1px;  
+    color: var(--teal, #55c4bb); 
   }
   #aboutModal p {
     margin: 8px 0; line-height: 1.35; font-size: 14px;
@@ -73,7 +71,7 @@ const micBtn   = document.getElementById('mic');
     border: none; background: transparent; color: #ee4d36;
     cursor: pointer; font-size: 1.5rem; line-height: 1;
   }
-  #aboutModal .close:hover { background: #1b1b1b; }
+  #aboutModal .close:hover { background: transparent; }
   `;
   const tag = document.createElement('style');
   tag.type = 'text/css';
