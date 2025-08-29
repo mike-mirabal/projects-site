@@ -151,10 +151,13 @@ function createAboutModal() {
     <div class="card">
       <button class="close" id="aboutClose" aria-label="Close">×</button>
       <h3 id="aboutTitle">About Spirit Guide</h3>
-      <p><strong>What is this?</strong> Spirit Guide is a passion-project MVP built to help guests explore the menu and help staff learn cocktail specs quickly—right at the bar.</p>
-      <p><strong>Who built it?</strong> Created by <em>Mike Mirabal</em>—bartender, creative technologist, and designer who tends bar at Ghost Donkey. This started as a notebook, evolved into a custom GPT, and became this focused assistant.</p>
-      <p><strong>Why build it?</strong> To make service smoother, training faster, and menu knowledge easier to access for everyone—without flipping through binders or searching random links.</p>
-      <p><strong>About AIgentask:</strong> AIgentask is a small software company focused on AI-powered solutions and automation workflows. Spirit Guide is an independent passion project (not an official Ghost Donkey collaboration).</p>
+      <p><span class="accent-teal-medium">What is this?</span> <strong>Spirit Guide</strong> is a full-stack web application that streamlines bar operations by providing instant access to cocktail specs and menu information for staff training and customer service. This independent passion project explores AI-powered hospitality solutions.</p>
+
+      <p><span class="accent-teal-medium">Who built it?</span> Created by <strong>Mike Mirabal</strong> — designer and software developer who bartends at Ghost Donkey, combining hospitality expertise with technical skills to solve real industry challenges.</p>
+
+      <p><span class="accent-teal-medium">Why build it?</span> Initially created to help staff learn and retain detailed cocktail specs and spirit knowledge, the project evolved into exploring whether AI-powered tools could intelligently elevate hospitality service, making training faster and menu knowledge easier to access without flipping through binders or searching random links.</p>
+
+      <p><span class="accent-teal-medium">About AIgentask:</span> <strong>AIgentask</strong> is a small software company specializing in AI-powered solutions and automation workflows. Spirit Guide demonstrates end-to-end product development—from identifying operational pain points to deploying practical technical solutions.</p>
     </div>
   `;
   document.body.appendChild(wrap);

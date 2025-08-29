@@ -359,6 +359,11 @@ html,body{
 .hint .b{ color:var(--teal); font-weight:600; }
 .hint .a{ color:var(--accent); font-weight:600; }
 
+/* About Modal */
+.card p {
+  margin-bottom: 1rem; /* Instead of <br> tags */
+}
+
 /* Staff password modal */
 #staffModal {
   position: fixed;
