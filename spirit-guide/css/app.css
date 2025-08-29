@@ -364,6 +364,8 @@ html,body{
   margin-bottom: 1rem; /* Instead of <br> tags */
 }
 
+
+
 /* Staff password modal */
 #staffModal {
   position: fixed;

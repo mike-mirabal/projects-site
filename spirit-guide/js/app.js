@@ -57,6 +57,7 @@ const micBtn   = document.getElementById('mic');
     position: relative;
   }
   #aboutModal h3 {
+    font-weight: 900;
     color: var(--teal, #55c4bb);
     text-shadow:-3px 3px 0 var(--accent);
     letter-spacing:1px;  
@@ -152,7 +153,7 @@ function createAboutModal() {
   wrap.innerHTML = `
     <div class="card">
       <button class="close" id="aboutClose" aria-label="Close">×</button>
-      <h3 id="aboutTitle">About Spirit Guide</h3>
+      <h3 id="aboutTitle">ABOUT SPIRIT GUIDE</h3>
       <p><span class="accent-teal-medium">What is this?</span> <strong>Spirit Guide</strong> is a full-stack web application that streamlines bar operations by providing instant access to cocktail specs and menu information for staff training and customer service. This independent passion project explores AI-powered hospitality solutions.</p>
 
       <p><span class="accent-teal-medium">Who built it?</span> Created by <strong>Mike Mirabal</strong> — designer and software developer who bartends at Ghost Donkey, combining hospitality expertise with technical skills to solve real industry challenges.</p>
