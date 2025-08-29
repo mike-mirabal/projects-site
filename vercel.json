@@ -5,5 +5,9 @@
       "destination": "/spirit-guide/",
       "permanent": true
     }
+    { "source": "/spirit-guide/tester-guide", 
+      "destination": "/spirit-guide/tester-guide/", 
+      "permanent": true 
+    }
   ]
 }

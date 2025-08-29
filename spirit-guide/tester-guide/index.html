@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+
+  <title>Spirit Guide — Tester Guide</title>
+  <meta name="description" content="Quick guide for staff/guests to try Spirit Guide and leave open-ended feedback." />
+
+  <!-- Favicons / OG (match your app paths) -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/spirit-guide/favicon_spiritguide.png"/>
+  <link rel="apple-touch-icon" href="/spirit-guide/favicon_spiritguide.png"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:title" content="Spirit Guide — Tester Guide"/>
+  <meta property="og:description" content="How to try the MVP and leave feedback."/>
+  <meta property="og:image" content="/spirit-guide/opengraph_spiritguide.jpg"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+
+  <!-- Reuse your site styles -->
+  <link rel="stylesheet" href="/spirit-guide/css/app.css"/>
+
+  <!-- Page-specific lightweight styles -->
+  <style>
+    :root { --card-pad: clamp(16px, 3vw, 28px); }
+    .doc-wrap{
+      max-width: var(--maxw); margin: 0 auto; padding: clamp(16px, 4vw, 40px);
+      min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; gap: 16px; background: var(--muted);
+    }
+    header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .brand-mini{ display:inline-flex; align-items:baseline; gap:10px; line-height:1.05; font-weight:800; letter-spacing:.3px; color:var(--text); font-size: clamp(22px, 3.4vw, 28px); }
+    .brand-mini .title{ color:var(--teal); text-shadow:-2px 2px 0 var(--accent); font-weight:900; }
+    .pill{ border:var(--border) solid var(--accent); padding:6px 10px; border-radius:6px; font-weight:700; font-size:12px; white-space:nowrap; color:var(--accent); background:var(--bg); }
+
+    .card{
+      background: var(--bg);
+      border: var(--border) solid var(--accent);
+      border-radius: 4px;
+      padding: var(--card-pad);
+    }
+    .lead{ margin: 6px 0 14px; line-height: 1.35; }
+    h1{ margin: 2px 0 6px; font-size: clamp(22px, 3.2vw, 32px); line-height:1.1; }
+    h2{ margin: 16px 0 8px; font-size: clamp(16px, 2.2vw, 20px); line-height:1.2; }
+    p{ margin: 8px 0; line-height: 1.35; }
+
+    .cta{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      padding:12px 14px; border-radius:6px; text-decoration:none; font-weight:800; letter-spacing:.2px;
+      border:var(--border) solid var(--accent); background:var(--accent); color:#fff;
+    }
+    .btn.secondary{ background:var(--bg); color:var(--accent); }
+
+    /* Feedback form */
+    form#feedback { display:grid; gap:10px; margin-top: 8px; }
+    textarea{
+      width:100%; min-height: 140px; resize: vertical;
+      border-radius: 6px; border: var(--border) solid var(--accent);
+      padding: 10px 12px; background: #fff; color: var(--text); line-height: 1.3;
+      font: inherit;
+    }
+    .hintline{ font-size: 12px; opacity: .8; }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .chip{ font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--muted); border:1px solid var(--accent); }
+    .msg-ok{ font-size: 13px; color: #0a5; }
+    .msg-err{ font-size: 13px; color: #b00; }
+
+    footer{ font-size:12px; opacity:.8; text-align:center; padding:12px 0; }
+  </style>
+</head>
+<body>
+  <div class="doc-wrap">
+    <header>
+      <div class="brand-mini">
+        <span class="title">SPIRIT GUIDE</span>
+        <span>Tester Guide</span>
+      </div>
+      <span class="pill">MVP · Internal Test</span>
+    </header>
+
+    <main class="card" role="main" aria-labelledby="title">
+      <h1 id="title">Thanks for testing!</h1>
+      <p class="lead">
+        Spirit Guide is a personal MVP by <strong>Mike Mirabal</strong> (bartender · designer · creative technologist).
+        It helps staff recall specs and helps guests explore confidently. This is <em>not</em> an official Ghost Donkey product.
+      </p>
+
+      <h2>How to test</h2>
+      <p>
+        Choose a mode (Guest or Staff) and role-play real scenarios. Ask whatever comes naturally. 
+        Try follow-ups, tricky phrasings, and anything you encounter on shift.
+      </p>
+
+      <div class="cta">
+        <a class="btn" href="/spirit-guide/" rel="noopener">Open Spirit Guide</a>
+        <a class="btn secondary" href="/" rel="noopener">Back to Projects</a>
+      </div>
+
+      <h2 style="margin-top:18px;">Leave feedback</h2>
+      <p class="hintline">One open field — share anything you noticed (good, bad, confusing, slow, ideas, etc.).</p>
+
+      <form id="feedback">
+        <textarea id="fbText" name="feedback" placeholder="Type thoughts, bugs, ideas… (no format required)"></textarea>
+        <div class="row">
+          <button class="btn" type="submit" id="fbSend">Send Feedback</button>
+          <span class="chip" title="Optional">Auto-includes timestamp & page</span>
+          <span id="fbMsg" aria-live="polite"></span>
+        </div>
+      </form>
+    </main>
+
+    <footer>
+      © <span id="y"></span> Mike Mirabal · Passion project by Aigentask. Not affiliated with or endorsed by Ghost Donkey.
+    </footer>
+  </div>
+
+  <script>
+    // --- Set year ---
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    // --- Configure your feedback endpoint ---
+    // Replace with your Google Apps Script Web App URL or any webhook that accepts JSON.
+    const FEEDBACK_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzJyA648qhOsXP5Y_wvNgOG3SLgnIEsCtFMs_2vHoHmX7oDRpUWkQFbW4l6rG3SXemIlw/exec"; // TODO: replace
+
+    // --- Handle feedback submit ---
+    const f = document.getElementById('feedback');
+    const btn = document.getElementById('fbSend');
+    const msg = document.getElementById('fbMsg');
+    const textarea = document.getElementById('fbText');
+
+    f.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = "";
+      const text = (textarea.value || "").trim();
+      if (!text) { msg.textContent = "Please add a note first."; msg.className = "msg-err"; return; }
+
+      btn.disabled = true;
+
+      const payload = {
+        feedback: text,
+        page: location.pathname,
+        ts: new Date().toISOString()
+      };
+
+      try {
+        const r = await fetch(FEEDBACK_WEBHOOK_URL, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
+
+        if (!r.ok) throw new Error(await r.text().catch(()=> "Request failed"));
+
+        msg.textContent = "Thanks! Your feedback was sent.";
+        msg.className = "msg-ok";
+        textarea.value = "";
+      } catch (err) {
+        console.warn("Feedback error:", err);
+        msg.innerHTML = `Couldn’t send. You can also <a href="mailto:mikemirabal360@gmail.com?subject=Spirit%20Guide%20Feedback&body=${encodeURIComponent(text)}">email it</a>.`;
+        msg.className = "msg-err";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
