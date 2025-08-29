@@ -171,7 +171,7 @@ html,body{
 
 .msg li {
   margin: 2px 0;             /* smaller gap between bullets */
-  line-height: 1.2;          /* slightly tighter than paragraph text */
+  line-height: 0.75;          /* slightly tighter than paragraph text */
 }
 
 /* Paragraph rhythm inside AI messages */
@@ -437,10 +437,10 @@ html,body{
 
 /* ===== Compact rhythm & consistent gaps (added) ===== */
 
-/* Consistent single gap between any two messages */
+/* Consistent single gap between any two messages 
 #chat .msg + .msg {
   margin-top: 10px;
-}
+} */
 
 /* Tight inner rhythm for multi-bubble assistant replies, if used */
 #chat .msg .bubble + .bubble {
