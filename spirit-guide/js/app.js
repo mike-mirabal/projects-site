@@ -278,7 +278,7 @@ function setMode(next){
   chatEl.innerHTML = '';
   const banner = isGuest
     ? `<span class="accent-strong">GUEST MODE</span>: Ask me anything about the menu, drinks, restaurant info, reservations, location, or recommendations.`
-    : `<span class="accent-strong">STAFF MODE</span>: Ask for builds, spirits info, pairings, or quiz yourself on cocktail knowledge.`;
+    : `<span class="accent-strong">STAFF MODE</span>: Ask for builds, spirits info, pairings, or quiz yourself on cocktails.`;
   appendAI(banner);
 }
 
