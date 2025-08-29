@@ -22,9 +22,19 @@
   <!-- Page-specific lightweight styles -->
   <style>
     :root { --card-pad: clamp(16px, 3vw, 28px); }
+    html, body { height: auto; min-height: 100%; }
     .doc-wrap{
-      max-width: var(--maxw); margin: 0 auto; padding: clamp(16px, 4vw, 40px);
-      min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; gap: 16px; background: var(--muted);
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: clamp(16px, 4vw, 40px);
+      /* Use dynamic viewport to avoid mobile 100vh bugs */
+      min-height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 16px;
+      background: var(--muted);
+      /* keep bottom content clear of device safe area */
+      padding-bottom: calc(env(safe-area-inset-bottom, 0) + 16px);
     }
     header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .brand-mini{ display:inline-flex; align-items:baseline; gap:10px; line-height:1.05; font-weight:800; letter-spacing:.3px; color:var(--text); font-size: clamp(22px, 3.4vw, 28px); }
@@ -53,17 +63,23 @@
     /* Feedback form */
     form#feedback { display:grid; gap:10px; margin-top: 8px; }
     textarea{
-      width:95%; min-height: 140px; resize: vertical;
-      border-radius: 6px; border: var(--border) solid var(--accent);
-      padding: 10px 12px; background: #fff; color: var(--text); line-height: 1.3;
+      width:100%;
+      min-height: 140px;
+      resize: vertical;
+      border-radius: 6px;
+      border: var(--border) solid var(--accent);
+      padding: 10px 12px;
+      background: #fff;
+      color: var(--text);
+      line-height: 1.3;
       font: inherit;
+      box-sizing: border-box;
     }
     .hintline{ font-size: 12px; opacity: .8; }
     .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .chip{ font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--muted); border:1px solid var(--accent); }
     .msg-ok{ font-size: 13px; color: #0a5; }
     .msg-err{ font-size: 13px; color: #b00; }
-
     footer{ font-size:12px; opacity:.8; text-align:center; padding:12px 0; }
   </style>
 </head>
@@ -80,12 +96,12 @@
     <main class="card" role="main" aria-labelledby="title">
       <h1 id="title">Thanks for testing!</h1>
       <p class="lead">
-        <span class="accent-teal">Spirit Guide</span> is a conversational AI that serves dual purposes: helping staff learn and reference cocktail specifications, and assisting guests with menu inquiries. </p> 
-
+        <span class="accent-teal">Spirit Guide</span> is a conversational AI that serves dual purposes: helping staff learn and reference cocktail specifications, and assisting guests with menu inquiries.
+      </p>
 
       <h2>How to test</h2>
       <p>
-        Choose a mode (Guest or Staff) and Ask whatever comes naturally.
+        Choose a mode (Guest or Staff) and ask whatever comes naturally.
       </p>
 
       <div class="cta">
@@ -99,7 +115,6 @@
         <textarea id="fbText" name="feedback" placeholder="Type anything you think, likes, dislikes, ideas..."></textarea>
         <div class="row">
           <button class="btn secondary" type="submit" id="fbSend">Send Feedback</button>
-
           <span id="fbMsg" aria-live="polite"></span>
         </div>
       </form>
@@ -114,11 +129,10 @@
     // --- Set year ---
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // --- Configure your feedback endpoint ---
-    // Replace with your Google Apps Script Web App URL or any webhook that accepts JSON.
-    const FEEDBACK_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzJyA648qhOsXP5Y_wvNgOG3SLgnIEsCtFMs_2vHoHmX7oDRpUWkQFbW4l6rG3SXemIlw/exec"; // TODO: replace
+    // --- Your Apps Script Web App URL (Deploy > New deployment > Web app) ---
+    const FEEDBACK_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbzJyA648qhOsXP5Y_wvNgOG3SLgnIEsCtFMs_2vHoHmX7oDRpUWkQFbW4l6rG3SXemIlw/exec";
 
-    // --- Handle feedback submit ---
+    // --- Handle feedback submit (form-encoded to avoid CORS preflight) ---
     const f = document.getElementById('feedback');
     const btn = document.getElementById('fbSend');
     const msg = document.getElementById('fbMsg');
@@ -132,20 +146,22 @@
 
       btn.disabled = true;
 
-      const payload = {
+      // URLSearchParams -> application/x-www-form-urlencoded (no preflight)
+      const body = new URLSearchParams({
         feedback: text,
         page: location.pathname,
         ts: new Date().toISOString()
-      };
+      });
 
       try {
         const r = await fetch(FEEDBACK_WEBHOOK_URL, {
           method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify(payload)
+          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+          body
         });
 
-        if (!r.ok) throw new Error(await r.text().catch(()=> "Request failed"));
+        // Apps Script returns 200 with text/plain; just treat any 200 as OK
+        if (!r.ok) throw new Error("Request failed: " + r.status);
 
         msg.textContent = "Thanks! Your feedback was sent.";
         msg.className = "msg-ok";
