@@ -71,7 +71,10 @@ const micBtn   = document.getElementById('mic');
     border: none; background: transparent; color: #ee4d36;
     cursor: pointer; font-size: 1.5rem; line-height: 1;
   }
-  #aboutModal .close:hover { background: transparent; }
+  #aboutModal .close:hover,
+#aboutModal .close:focus { 
+  background: transparent; 
+}
   `;
   const tag = document.createElement('style');
   tag.type = 'text/css';
