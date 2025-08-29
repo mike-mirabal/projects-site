@@ -277,8 +277,8 @@ function setMode(next){
   threadId = null;
   chatEl.innerHTML = '';
   const banner = isGuest
-    ? `<span class="accent-strong">GUEST MODE</span>: Ask about menu items, ingredients, prices, and pairings.`
-    : `<span class="accent-strong">STAFF MODE</span>: Ask for builds, presentation, or quiz yourself.`;
+    ? `<span class="accent-strong">GUEST MODE</span>: Ask me anything about the menu, drinks, restaurant info, reservations, location, or recommendations.`
+    : `<span class="accent-strong">STAFF MODE</span>: Ask for builds, spirits info, pairings, or quiz yourself on cocktail knowledge.`;
   appendAI(banner);
 }
 
