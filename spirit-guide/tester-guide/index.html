@@ -42,7 +42,7 @@
     h2{ margin: 16px 0 8px; font-size: clamp(16px, 2.2vw, 20px); line-height:1.2; }
     p{ margin: 8px 0; line-height: 1.35; }
 
-    .cta{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .cta{ display:flex; gap:1rem; flex-wrap:wrap; margin-top:12px; }
     .btn{
       display:inline-flex; align-items:center; justify-content:center; gap:10px;
       padding:12px 14px; border-radius:6px; text-decoration:none; font-weight:800; letter-spacing:.2px;
@@ -53,7 +53,7 @@
     /* Feedback form */
     form#feedback { display:grid; gap:10px; margin-top: 8px; }
     textarea{
-      width:100%; min-height: 140px; resize: vertical;
+      width:95%; min-height: 140px; resize: vertical;
       border-radius: 6px; border: var(--border) solid var(--accent);
       padding: 10px 12px; background: #fff; color: var(--text); line-height: 1.3;
       font: inherit;
@@ -80,36 +80,33 @@
     <main class="card" role="main" aria-labelledby="title">
       <h1 id="title">Thanks for testing!</h1>
       <p class="lead">
-        Spirit Guide is a personal MVP by <strong>Mike Mirabal</strong> (bartender · designer · creative technologist).
-        It helps staff recall specs and helps guests explore confidently. This is <em>not</em> an official Ghost Donkey product.
-      </p>
+        <span class="accent-teal">Spirit Guide</span> is a conversational AI that serves dual purposes: helping staff learn and reference cocktail specifications, and assisting guests with menu inquiries. </p> 
+
 
       <h2>How to test</h2>
       <p>
-        Choose a mode (Guest or Staff) and role-play real scenarios. Ask whatever comes naturally. 
-        Try follow-ups, tricky phrasings, and anything you encounter on shift.
+        Choose a mode (Guest or Staff) and Ask whatever comes naturally.
       </p>
 
       <div class="cta">
-        <a class="btn" href="/spirit-guide/" rel="noopener">Open Spirit Guide</a>
         <a class="btn secondary" href="/" rel="noopener">Back to Projects</a>
+        <a class="btn" href="/spirit-guide/" rel="noopener">Open Spirit Guide</a>
       </div>
 
       <h2 style="margin-top:18px;">Leave feedback</h2>
-      <p class="hintline">One open field — share anything you noticed (good, bad, confusing, slow, ideas, etc.).</p>
 
       <form id="feedback">
-        <textarea id="fbText" name="feedback" placeholder="Type thoughts, bugs, ideas… (no format required)"></textarea>
+        <textarea id="fbText" name="feedback" placeholder="Type anything you think, likes, dislikes, ideas..."></textarea>
         <div class="row">
-          <button class="btn" type="submit" id="fbSend">Send Feedback</button>
-          <span class="chip" title="Optional">Auto-includes timestamp & page</span>
+          <button class="btn secondary" type="submit" id="fbSend">Send Feedback</button>
+
           <span id="fbMsg" aria-live="polite"></span>
         </div>
       </form>
     </main>
 
     <footer>
-      © <span id="y"></span> Mike Mirabal · Passion project by Aigentask. Not affiliated with or endorsed by Ghost Donkey.
+      © <span id="y"></span> Passion project by Mike Mirabal. Not affiliated with or endorsed by Ghost Donkey.
     </footer>
   </div>
 
