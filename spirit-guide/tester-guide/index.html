@@ -48,8 +48,9 @@
       padding: var(--card-pad);
     }
     .lead{ margin: 6px 0 14px; line-height: 1.35; }
-    h1{ margin: 2px 0 6px; font-size: clamp(22px, 3.2vw, 32px); line-height:1.1; }
-    h2{ margin: 16px 0 8px; font-size: clamp(16px, 2.2vw, 20px); line-height:1.2; }
+    h1{ margin: 1rem 0 0.5rem; font-size: clamp(1.2rem, 3.2vw, 32px); line-height:1.1; }
+    h1#title{ margin-bottom: 1rem;}
+    h2{ margin: 1rem 0 0.rem; font-size: clamp(1rem, 2.2vw, 20px); line-height:1; }
     p{ margin: 8px 0; line-height: 1.35; }
 
     .cta{ display:flex; gap:1rem; flex-wrap:wrap; margin-top:12px; }
@@ -96,28 +97,41 @@
     <main class="card" role="main" aria-labelledby="title">
       <h1 id="title">Thanks for testing!</h1>
       <p class="lead">
-        <span class="accent-teal">Spirit Guide</span> is a conversational AI that serves dual purposes: helping staff learn and reference cocktail specifications, and assisting guests with menu inquiries.
-      </p>
+        <span class="accent-teal">Spirit Guide</span> is a Conversational AI that: 
+        <ul><li>Helps Staff Learn and Remember</li>
+            <li>Gives Guests Answers and Recommendations</li>
+            <li>and More!</li>
+      </ul>
+        </p>
 
       <h2>How to test</h2>
       <p>
-        Choose a mode (Guest or Staff) and ask whatever comes naturally.
+        <ul>
+            <li>
+        Choose a mode (Guest or Staff).
+            </li>
+            <li>
+            Ask whatever comes naturally.
+            </li>
+             <li>
+       Staff Mode Password: <span class="accent-medium">stealth</span>
+            </li>
+        </ul>
+      </p>
+    
+
+      <h2>Tips</h2>
+      <p>
+        Try role-playing. For example, in Guest Mode, ask "What cocktails do you recommend with tacos?"
       </p>
 
       <div class="cta">
+        <!--
         <a class="btn secondary" href="/" rel="noopener">Back to Projects</a>
+        -->
         <a class="btn" href="/spirit-guide/" rel="noopener">Open Spirit Guide</a>
       </div>
 
-      <h2 style="margin-top:18px;">Leave feedback</h2>
-
-      <form id="feedback">
-        <textarea id="fbText" name="feedback" placeholder="Type anything you think, likes, dislikes, ideas..."></textarea>
-        <div class="row">
-          <button class="btn secondary" type="submit" id="fbSend">Send Feedback</button>
-          <span id="fbMsg" aria-live="polite"></span>
-        </div>
-      </form>
     </main>
 
     <footer>
