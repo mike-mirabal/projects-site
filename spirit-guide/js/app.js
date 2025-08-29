@@ -56,7 +56,7 @@ const micBtn   = document.getElementById('mic');
     box-shadow: 0 16px 48px rgba(0,0,0,.55);
     position: relative;
   }
-  #aboutModal h3 {
+  #aboutModal h3 {git c
     font-weight: 900;
     color: var(--teal, #55c4bb);
     text-shadow:-3px 3px 0 var(--accent);
@@ -69,8 +69,8 @@ const micBtn   = document.getElementById('mic');
     position: absolute; top: 10px; right: 10px;
     height: 28px; width: 28px; border-radius: 8px;
     display: inline-grid; place-items: center;
-    border: 1px solid #2a2a2a; background: #151515; color: #fff;
-    cursor: pointer; font-size: 16px; line-height: 1;
+    border: none; background: transparent; color: #ee4d36;
+    cursor: pointer; font-size: 1.5rem; line-height: 1;
   }
   #aboutModal .close:hover { background: #1b1b1b; }
   `;
@@ -154,13 +154,13 @@ function createAboutModal() {
     <div class="card">
       <button class="close" id="aboutClose" aria-label="Close">×</button>
       <h3 id="aboutTitle">ABOUT SPIRIT GUIDE</h3>
-      <p><span class="accent-teal-medium">What is this?</span> <strong>Spirit Guide</strong> is a full-stack web application that streamlines bar operations by providing instant access to cocktail specs and menu information for staff training and customer service. This independent passion project explores AI-powered hospitality solutions.</p>
+      <p><span class="accent-medium">What is this?</span> <strong>Spirit Guide</strong> is a full-stack web application that streamlines bar operations by providing instant access to cocktail specs and menu information for staff training and customer service. This independent passion project explores AI-powered hospitality solutions.</p>
 
-      <p><span class="accent-teal-medium">Who built it?</span> Created by <strong>Mike Mirabal</strong> — designer and software developer who bartends at Ghost Donkey, combining hospitality expertise with technical skills to solve real industry challenges.</p>
+      <p><span class="accent-medium">Who built it?</span> Created by <strong>Mike Mirabal</strong> — designer and software developer who bartends at Ghost Donkey, combining hospitality expertise with technical skills to solve real industry challenges.</p>
 
-      <p><span class="accent-teal-medium">Why build it?</span> Initially created to help staff learn and retain detailed cocktail specs and spirit knowledge, the project evolved into exploring whether AI-powered tools could intelligently elevate hospitality service, making training faster and menu knowledge easier to access without flipping through binders or searching random links.</p>
+      <p><span class="accent-medium">Why build it?</span> Initially created to help staff learn and retain detailed cocktail specs and spirit knowledge, the project evolved into exploring whether AI-powered tools could intelligently elevate hospitality service, making training faster and menu knowledge easier to access without flipping through binders or searching random links.</p>
 
-      <p><span class="accent-teal-medium">About AIgentask:</span> <strong>AIgentask</strong> is a small software company specializing in AI-powered solutions and automation workflows. Spirit Guide demonstrates end-to-end product development—from identifying operational pain points to deploying practical technical solutions.</p>
+      <p><span class="accent-medium">About AIgentask:</span> <strong>AIgentask</strong> is a small software company specializing in AI-powered solutions and automation workflows. Spirit Guide demonstrates end-to-end product development—from identifying operational pain points to deploying practical technical solutions.</p>
     </div>
   `;
   document.body.appendChild(wrap);
