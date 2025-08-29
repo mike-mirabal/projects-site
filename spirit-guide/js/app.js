@@ -57,6 +57,7 @@ const micBtn   = document.getElementById('mic');
     position: relative;
   }
   #aboutModal h3 {git c
+    font-size: 1.2rem;  
     font-weight: 900;
     color: var(--teal, #55c4bb);
     text-shadow:-3px 3px 0 var(--accent);
