@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/spirit-guide",
+      "destination": "/spirit-guide/",
+      "permanent": true
+    }
+  ]
+}
