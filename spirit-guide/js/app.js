@@ -46,18 +46,20 @@ const micBtn   = document.getElementById('mic');
   /* --- About modal (opens from hint tap) --- */
   #aboutModal {
     position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.45); z-index: 9999; padding: 12px;
+    background: rgba(0,0,0,0.6); z-index: 9999; padding: 12px;
   }
   #aboutModal * { box-sizing: border-box; }
   #aboutModal .card {
-    background: #111; color: #fff; width: min(92vw, 560px);
-    border-radius: 12px; padding: 18px 16px 16px;
+    background: #f3d9d9; color: #09080a; width: min(92vw, 560px);
+    border:var(--border) solid var(--accent);
+    border-radius: 4px; padding: 18px 16px 16px;
     box-shadow: 0 16px 48px rgba(0,0,0,.55);
     position: relative;
   }
   #aboutModal h3 {
-    margin: 0 28px 6px 0; font-size: 16px; letter-spacing: .02em;
     color: var(--teal, #55c4bb);
+    text-shadow:-3px 3px 0 var(--accent);
+    letter-spacing:1px;  
   }
   #aboutModal p {
     margin: 8px 0; line-height: 1.35; font-size: 14px;
