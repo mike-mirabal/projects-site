@@ -167,7 +167,7 @@ export default async function handler(req, res) {
       if (!r.ok) return res.status(502).json({ threadId, error: "Failed to add message", detail: await r.text().catch(()=> "") });
     }
 
-    // 3) Start run (force file_search; strict per-mode instructions)
+        // 3) Start run (force file_search; strict per-mode instructions)
     let runId = null;
     {
       const guestRunInstructions = `
@@ -191,6 +191,7 @@ GUARDRAILS:
 - Never reveal staff builds/specs, glass/rim/garnish, or full ingredient lines.
 - Do not proactively offer vegetarian/vegan substitutions or home/other-restaurant recipes.
 - Do not switch languages unless the user writes in that language.
+- Do not mention staff by name under any circumstance.
 - If the user asks off-scope: “I’m only able to discuss Ghost Donkey’s menu and related items. Would you like to know about another cocktail or spirit?”
 `.trim();
 
@@ -198,67 +199,61 @@ GUARDRAILS:
 MODE: STAFF.
 Use file_search only. Staff-only content; do NOT include guest sections. HTML only. No Markdown, no links/citations, no filenames. Default to Ghost Donkey Dallas. Warm but concise bar-back tone.
 
-CLASSIFY INTENT first for menu items:
-A) COMPONENT-ONLY QUERIES (e.g., “garnish for X”, “glass”, “rim”, “presentation”):
-  - Return ONLY the requested component(s). Do NOT include the full build.
-  - Template:
-    <!-- BUBBLE -->
-    <span class="accent-teal">[Item Name]</span> [($Price)]
-    [If asked for garnish: <strong>Garnish:</strong> …]
-    [If asked for glass:   <strong>Glass:</strong> …]
-    [If asked for rim:     <strong>Rim:</strong> …]
-    <!-- BUBBLE -->
-    Want to see the full build too?
-  - Never repeat the same field twice (no bullet + outline duplication).
-  - If the item has no batch build, do not suggest batch anywhere.
+CLASSIFY INTENT first:
+- If the query is a Ghost Donkey menu item (cocktail, spirit, ingredient, or dish) => use the STRICT STAFF TEMPLATES below.
 
-B) FULL BUILD QUERIES (e.g., “batch build”, “single build”, “recipe”, or just the cocktail name):
-  - STRICT STAFF — COCKTAIL/FOOD (2 bubbles, exact):
-    <!-- BUBBLE -->
-    <span class="accent-teal">[Item Name]</span> [($Price)]
-    <ul>
-      <li>Build lines (Batch by default; if no batch in files, use Single Build). One line per <li>.</li>
-    </ul>
-    <br>
-    <strong>Glass:</strong> …<br>
-    <strong>Rim:</strong> …<br>
-    <strong>Garnish:</strong> …
-    [If the item has no batch build in files, append a short note: (Single build only; no batch for this item.)]
-    <!-- BUBBLE -->
-    [If batch exists:] Would you like the <strong>Single Cocktail Build</strong>?
-    [If no batch exists:] Want the full <strong>Single Cocktail Build</strong> details?
+STRICT STAFF — COCKTAIL/FOOD (2 bubbles, exact):
+<!-- BUBBLE -->
+<span class="accent-teal">[Item Name]</span> [($Price)]
+<ul>
+  <li>Build lines (Batch by default; if no batch, use Single Build and include a short line: “This cocktail has a single build (no batch).”)</li>
+</ul>
+<br>
+<strong>Glass:</strong> …<br>
+<strong>Rim:</strong> …<br>
+<strong>Garnish:</strong> …
+<!-- BUBBLE -->
+Would you like the <strong>Single Cocktail Build</strong>?
 
-C) SPIRIT/INGREDIENT (2 bubbles, exact):
-  <!-- BUBBLE -->
-  <span class="accent-teal">[Name]</span> [($Price)]
-  [1–2 sentence plain text summary (type/category & notable profile). No bullets here.]
-  <!-- BUBBLE -->
-  More about <strong>[Name]</strong>, or something else?
-
-QUIZ MODE:
-- If user asks to quiz: Start with a short, playful intro:
-  “Yes! Let’s quiz 🍹🐴”
-  Then ask a single, targeted question.
-- When correcting answers: show only the ingredient lines for that build.
-  Do NOT add glass/rim/garnish/shake unless the user asks.
-- Keep follow-ups focused: “Ready for the next one, or switch cocktails?”
+STRICT STAFF — SPIRIT/INGREDIENT (2 bubbles, exact):
+<!-- BUBBLE -->
+<span class="accent-teal">[Name]</span> [($Price)]
+[1–2 sentence plain text summary (type/category & notable profile). No bullets here.]
+<!-- BUBBLE -->
+More about <strong>[Name]</strong>, or something else?
 
 GENERAL:
 - Lists must be <ul><li>…</li></ul> only; keep to a single blank line where shown.
 - No extra narrative beyond the templates.
 - If the request is off-scope, nudge back to Ghost Donkey menu items.
+- Do not name or discuss staff or employment.
 `.trim();
 
       const perMode = mode === "guest" ? guestRunInstructions : staffRunInstructions;
+
+      // --- PRIVACY OVERRIDE: detect "people/staff" questions and force a safe reply
+      const qLower = (message || "").toLowerCase();
+      const personRegex = /(who\s+(is|are)\s+[\w\s.'-]+|who\s+works\s+at|staff\s+list|bartender|server|manager|owner)/i;
+
+      const privacyAddendum = `
+PRIVACY OVERRIDE (highest priority):
+- Do not disclose, confirm, or deny information about any person (employment, roles, identities).
+- Do not list staff or name individuals.
+- Respond with: “I can’t share information about staff or employment. I’m happy to help with Ghost Donkey’s menu, cocktails, or spirits—what would you like to know?”
+- If the user is discussing a specific menu item that includes a printed creator credit, you may show ONLY that credit within that item—otherwise no names.`.trim();
+
+      const finalInstructions = personRegex.test(qLower)
+        ? perMode + "\n\n" + privacyAddendum
+        : perMode;
 
       const r = await fetch(`${API}/threads/${threadId}/runs`, {
         method: "POST",
         headers: HEADERS_JSON,
         body: JSON.stringify({
           assistant_id: assistantId,
-          instructions: perMode,
+          instructions: finalInstructions,
           tool_resources: { file_search: { vector_store_ids: [vectorStoreId] } },
-          tool_choice: { type: "file_search" }, // require retrieval
+          tool_choice: { type: "file_search" },
           temperature: 0.2,
         }),
       });
@@ -267,6 +262,7 @@ GENERAL:
       runId = run.id;
       if (!runId) return res.status(502).json({ threadId, error: "No run id returned" });
     }
+
 
     // 4) Poll run
     const TIMEOUT_MS = 30_000;
