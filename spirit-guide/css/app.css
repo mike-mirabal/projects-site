@@ -469,3 +469,48 @@ html,body{
 #chat .msg:first-child {
   margin-top: 0;
 }
+/* --- Spirit Guide: quick splash --- */
+#sg-splash{
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  background: var(--muted, #f3d9d9); /* match app background */
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;                          /* start hidden; JS toggles .show */
+}
+
+#sg-splash img{
+  width: clamp(96px, 12vw, 160px);
+  height: auto;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 4px 14px rgba(0,0,0,.18));
+  transform: scale(.85);
+}
+
+/* Run both: image “pop” + overlay fade-out */
+#sg-splash.show{
+  animation: sg-fade 720ms ease forwards;
+}
+#sg-splash.show img{
+  animation: sg-pop 620ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+@keyframes sg-pop{
+  0%   { transform: scale(.85) rotate(-2deg); opacity: 0; }
+  55%  { transform: scale(1.08) rotate(0);   opacity: 1; }
+  100% { transform: scale(1.00);             opacity: 1; }
+}
+@keyframes sg-fade{
+  0%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Respect accessibility settings */
+@media (prefers-reduced-motion: reduce){
+  #sg-splash.show,
+  #sg-splash.show img{
+    animation: none;
+  }
+  #sg-splash{ opacity: 0; }
+}
