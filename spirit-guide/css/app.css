@@ -469,14 +469,14 @@ html,body{
 #chat .msg:first-child {
   margin-top: 0;
 }
-/* --- Spirit Guide: quick splash --- */
+/* --- Spirit Guide: quick splash (revised to avoid flash) --- */
 #sg-splash{
   position: fixed; inset: 0;
   display: grid; place-items: center;
-  background: var(--muted, #f3d9d9); /* match app background */
+  background: var(--muted, #f3d9d9); /* fully covers page immediately */
   z-index: 10000;
   pointer-events: none;
-  opacity: 0;                          /* start hidden; JS toggles .show */
+  opacity: 1;                         /* <-- was 0; start visible to block page flash */
 }
 
 #sg-splash img{
@@ -485,6 +485,7 @@ html,body{
   will-change: transform, opacity;
   filter: drop-shadow(0 4px 14px rgba(0,0,0,.18));
   transform: scale(.85);
+  opacity: 0;                         /* image itself fades in via animation */
 }
 
 /* Run both: image “pop” + overlay fade-out */
@@ -506,11 +507,8 @@ html,body{
   100% { opacity: 0; }
 }
 
-/* Respect accessibility settings */
 @media (prefers-reduced-motion: reduce){
   #sg-splash.show,
-  #sg-splash.show img{
-    animation: none;
-  }
-  #sg-splash{ opacity: 0; }
+  #sg-splash.show img{ animation: none; }
+  #sg-splash{ opacity: 0; } /* skip overlay if user prefers reduced motion */
 }
