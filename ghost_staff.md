@@ -65,6 +65,31 @@ Make a reservation:
   * Call (469)-837-2562  
   * visit the Host Stand at Palma
 
+#### Private Events
+
+Private Events / Booking: 
+
+* Combine a Mezcal tasting experience with a dash of tequila and some killer tacos, and this spicy bar hits a little different.  
+* Ghost Donkey may be small, but this hidden gem holds a fiery fiesta inside its four walls. We can accommodate groups of 20-100 people to create a private experience filled with agave cocktails and incredible food your guests won’t be forgetting anytime soon.  
+* Book: [https://www.ghostdonkeydallas.com/events](https://www.ghostdonkeydallas.com/events)
+
+#### 
+
+#### Menus
+
+Menu: 
+
+* Drinks: [https://www.ghostdonkeydallas.com/drinks](https://www.ghostdonkeydallas.com/drinks)  
+* Food: [https://www.ghostdonkeydallas.com/food](https://www.ghostdonkeydallas.com/food)  
+* Happy Hour: [https://www.ghostdonkeydallas.com/happy-hour](https://www.ghostdonkeydallas.com/happy-hour)  
+* Gluten Sensitive: [https://www.ghostdonkeydallas.com/gluten-sensitive](https://www.ghostdonkeydallas.com/gluten-sensitive)
+
+#### Gift Cards
+
+Purchase Gift Cards:
+
+* [https://flagship.securetree.com/](https://flagship.securetree.com/)
+
 ### Company Information 
 
 Operated by Flagship Group: [https://www.flagshiprestaurantgroup.com/](https://www.flagshiprestaurantgroup.com/)
@@ -849,10 +874,16 @@ Ghost Donkey FAQs:
   * Description: Standard well Espadin that works nicely as a bulk mixer. Smokey with a small undertone of grilled pineapple. Classic entry-level mezcal with reliable character and accessibility.  
   * Pairing: Perfect for Casa Mezcal Margarita or any cocktail requiring dependable mezcal character at an accessible price point.
 
+* **Desolas Blanco Mezcal**  
+  * Price: $7  
+  * Happy Hour Price: Not Available  
+  * Description: A joven mezcal with a crisp, botanical flavor and a subtle touch of smoke. This mezcal is known for its smoothness, making it suitable for sipping or mixing.  
+  * Cocktail Pairing: Can be served neat or over ice with a slice of orange or grapefruit. It also works well in a Mezcal Old Fashioned with a touch of honey and chocolate bitters.
+
 * **Dos Hombres Espadin**  
   * Price: $9  
   * Happy Hour Price: Not Available  
-  * Description: Artisanal Espadin mezcal with clean agave character and balanced smoke. Traditional production methods with modern accessibility and consistent quality.  
+  * Description: An artisanal mezcal from Oaxaca, Mexico, co-founded by actors Aaron Paul and Bryan Cranston. Made from Espadín agave, it has a smoky aroma with a smooth, complex flavor profile. Pairs traditional production methods with modern accessibility and consistent quality.  
   * Pairing: Excellent in Casa Mezcal Margarita or cocktails requiring clean Espadin character with reliable smokiness.
 
 * **El Jolgorio Espadin**  
@@ -1328,22 +1359,22 @@ Ghost Donkey FAQs:
   * Pairing: Excellent in Casa Margarita for authentic highland character, or use in cocktails requiring clean, traditional blanco profile.
 
 * **Don Fulano Reposado**   
-  * Price: $8  
+  * Price: $9  
   * Happy Hour Price: Not Available  
   * Description: Aged in used American oak barrels, adding subtle vanilla and spice without overwhelming the agave character. Balanced and refined with gentle oak influence.  
   * Pairing: Perfect for elevated margaritas or use in cocktails where you want oak complexity without heavy barrel influence.
 
-* **Don Fulano Anejo \- $9**  
-  * Price: $9  
+* **Don Fulano Anejo**  
+  * Price: $10.5  
   * Happy Hour Price: Not Available  
   * Description: Aged minimum 1 year with rich caramel, vanilla, and dried fruit notes. Well-balanced with the agave still prominent beneath the oak aging.  
   * Pairing: Excellent neat or in premium stirred cocktails where the aging adds sophistication without masking agave character.
 
 * **Don Fulano Imperial Extra Anejo**  
-  * Price: $25  
+  * Price: $35  
   * Happy Hour Price: Not Available  
   * Description: Ultra-premium extra añejo aged minimum 5 years. Complex notes of chocolate, coffee, dried fruit, and spice with exceptional smoothness and depth.  
-  * Pairing: Reserved for neat sipping to appreciate the extended aging, or in the most premium cocktail applications.
+  * Pairing: This is a sipping spirit to be savored. It is recommended to be enjoyed neat to fully appreciate the craftsmanship and the years of aging that have gone into its creation.
 
 
 * **Don Julio Blanco**  
@@ -1451,22 +1482,34 @@ Ghost Donkey FAQs:
   * Pairing: Perfect for elevated cocktails where single-estate quality adds distinction, or sip neat to appreciate ranch specificity.
 
 * **Painted Donkey Blanco**  
-  * Price: $8  
+  * Price: $7.5  
   * Happy Hour Price: Not Available  
   * Description: Clean, approachable blanco tequila with bright agave character and smooth finish. Crafted for both mixing and sipping with consistent quality.  
   * Pairing: Versatile in all blanco cocktails, especially fitting in Ghost Donkey's signature drinks for thematic connection.
 
 * **Painted Donkey Reposado**  
-  * Price: $9  
+  * Price: $8  
   * Happy Hour Price: Not Available  
   * Description: Aged in American oak barrels adding vanilla and caramel complexity to the clean blanco base. Smooth and balanced with gentle oak influence.  
   * Pairing: Perfect for margarita upgrades or sipping neat, adds oak depth while maintaining approachable character.
 
 * **Painted Donkey Anejo**  
-  * Price: $10  
+  * Price: $9  
   * Happy Hour Price: Not Available  
   * Description: Aged minimum 1 year in oak barrels developing rich caramel, vanilla, and spice notes. Complex yet approachable with smooth finish.  
   * Pairing: Best appreciated neat or in premium cocktails where the aging adds sophistication to the donkey theme.
+
+* **Pantalones Blanco**  
+  * **Price:** $13.50 (1.5 oz)  
+  * **Happy Hour Price:** Not Available  
+  * **Description:** An organic Blanco tequila founded by Matthew McConaughey. It is known for its clean, crisp taste with sweet notes of cooked agave.  
+  * **Cocktail Pairing:** The bright and fresh character of this tequila is perfect for a classic Margarita or a simple "Dance Your Pants Off" cocktail with watermelon juice and agave nectar.
+
+* **Pantalones Reposado**  
+  * **Price:** $17 (1.5 oz)  
+  * **Happy Hour Price:** Not Available  
+  * **Description:** An organic Reposado tequila, aged in whisky barrels for up to nine months. It offers notes of agave, vanilla, and a smooth, oaked finish.  
+  * **Cocktail Pairing:** Excellent for sipping, but also adds a layer of complexity to cocktails like an Old Fashioned or a tequila-based twist on a classic sour.
 
 * **Pasote Blanco**  
   * Price: $8  
@@ -1621,7 +1664,7 @@ Ghost Donkey FAQs:
   * Pairing: Featured in Mushroom Margarita and Burro Dorado, adds sweet corn character and silky texture to cocktails requiring unique Mexican ingredients.
 
 * **Licor 43**  
-  * Price: $10  
+  * Price: $11 (1.5oz)  
   * Happy Hour Price: Not Available  
   * Description: Spanish vanilla liqueur with complex blend of 43 secret ingredients including vanilla, citrus, and spices. Sweet and aromatic with distinctive golden color.  
   * Pairing: Perfect in coffee cocktails or dessert drinks, adds vanilla sweetness and Spanish complexity to cocktails requiring liqueur character.
@@ -1631,6 +1674,12 @@ Ghost Donkey FAQs:
   * Happy Hour Price: Not Available  
   * Description: Premium coffee liqueur made with Honduran coffee beans, offering rich coffee flavor with balanced sweetness and aromatic complexity. Superior to mass-market coffee liqueurs.  
   * Pairing: Featured in La Mora Carajillo, excellent in espresso martinis or coffee cocktails where premium coffee character deserves to be showcased.
+
+* **Hennessy**  
+  * Price: $11 (1.5oz)  
+  * Happy Hour Price: Not Available  
+  * Description: A classic French Cognac, Hennessy is a blend of aged eaux-de-vie. It presents a beautiful golden color with fruity sweetness and notes of oak, vanilla, and caramel.  
+  * Cocktail Pairing: A versatile spirit, it can be enjoyed neat or in cocktails like the classic Sidecar, a Hennessy Sazerac, or a simple Hennessy and Coke.
 
 ### Food
 
@@ -2068,3 +2117,123 @@ Bacanora is produced in the state of Sonora in northwest Mexico and carries a re
 * (cocktail, beer)  
 * Beer cocktail with lime juice, spices, and chile; variations include tomato juice, hot sauce, and rim salt.  
 * **Pronounced**: mee-cheh-LAH-dah
+
+# 
+
+## **QUIZ MODE — STAFF TRAINING**
+
+**Purpose:** Quiz Mode helps staff practice and retain knowledge of Ghost Donkey’s cocktails, spirits, and hospitality standards. It is NOT meant to test guests or reveal proprietary information.
+
+---
+
+### **General Rules**
+
+* **Scope:** Quiz only on standard Ghost Donkey menu items and training content.
+
+* **Exclusions:** Do not quiz on secret menu items or speculative upsells.
+
+* **Leniency:** Accept minor misspellings, abbreviations, or variations in staff answers (e.g., “repos” → “reposado,” “lime j” → “lime juice”). Correct gently and display the full correct answer.
+
+* **Tone:** Encouraging, playful, but professional. Keep answers concise and scannable.
+
+* **Format:** Always start with **“Yes—let’s quiz\!”** and then clearly present each question one at a time.
+
+---
+
+### **Areas of Focus**
+
+1. **Cocktail Builds & Specs**
+
+   * Batch vs. Single Build.
+
+   * Correct proportions of ingredients.
+
+   * Glassware, rim, garnish.
+
+   * Shake/stir method only if explicitly requested.
+
+2. **Ingredients & Spirits**
+
+   * Identify the base spirit of cocktails.
+
+   * Differentiate tequila vs. mezcal.
+
+   * Recognize key modifiers (e.g., Nixta, Licor 43).
+
+   * Tasting notes of core spirits.
+
+3. **Menu Basics**
+
+   * Cocktail prices.
+
+   * Happy hour differences.
+
+   * Identifying “house” cocktails (e.g., Casa Margarita).
+
+4. **Hospitality Principles (Flagship Group Standard)**
+
+   * “Give them the pickle”: Go the extra mile in guest service.
+
+   * Role-play questions on how to handle guest requests respectfully.
+
+   * Tone checks: Is the answer hospitable, playful, yet professional?
+
+---
+
+### **Levels of Difficulty**
+
+* **Level 1: Foundations:** Simple recall (e.g., “What spirit is the base of the Casa Margarita?”).
+
+* **Level 2: Intermediate:** Multi-part specs (“What garnish and rim go on Corazon de Melon?”).
+
+* **Level 3: Advanced:** Scenario-based questions (e.g., “A guest asks for a fruity margarita—what should you suggest?”).
+
+* **Level 4: Expert:** Blind recall of full builds (batch or single).
+
+---
+
+### **Question Types**
+
+* **Multiple Choice** (spirits, categories).
+
+* **Short Answer / Recall** (builds, garnishes, glassware).
+
+* **Scenario Role-Play** (hospitality, guest handling).
+
+* **True / False** (quick checks).
+
+---
+
+### **Scoring & Feedback**
+
+* **Scoring:** \+1 for correct recall. Partial credit if the answer is close but missing detail.
+
+* **Feedback:** Correct answers are shown with the full official spec. Incorrect answers are gently corrected (“Close\! Don’t forget the lime juice.”).
+
+* **Tracking:** Log session ID, score, and weak areas for review in Google Sheets.
+
+---
+
+### **Session Types**
+
+* **Quick Drill (3–5 questions):** For pre-shift warmups.
+
+* **Full Session (10–15 questions):** For training practice.
+
+* **Targeted Practice:** Focus on one category (e.g., Builds).
+
+* **Random Mix:** Covers all categories.
+
+---
+
+### **End of Quiz**
+
+* Always provide a **summary bubble** with:
+
+  * Score.
+
+  * Strengths and weak spots.
+
+  * Playful encouragement.
+
+* End with: *“Want to retry this section, or level up?”*
